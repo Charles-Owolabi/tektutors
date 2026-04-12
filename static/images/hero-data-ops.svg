@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1200" role="img" aria-labelledby="title desc">
+  <title id="title">Premium data mentorship dashboard</title>
+  <desc id="desc">A vibrant analytics command center with progress charts, mentorship pipeline, and measurable learner outcomes.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#10184F"/>
+      <stop offset="0.55" stop-color="#1B2475"/>
+      <stop offset="1" stop-color="#24339A"/>
+    </linearGradient>
+    <linearGradient id="frame" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.98"/>
+      <stop offset="1" stop-color="#EEF3FF" stop-opacity="0.98"/>
+    </linearGradient>
+    <linearGradient id="orange" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFAF73"/>
+      <stop offset="1" stop-color="#EB6711"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3F59D6"/>
+      <stop offset="1" stop-color="#1B2475"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="150%" height="170%">
+      <feDropShadow dx="0" dy="22" stdDeviation="28" flood-color="#0F1440" flood-opacity="0.34"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="1200" fill="url(#bg)"/>
+  <circle cx="1340" cy="160" r="250" fill="#FFB487" fill-opacity="0.18"/>
+  <circle cx="220" cy="1020" r="280" fill="#9FB2FF" fill-opacity="0.22"/>
+  <circle cx="1460" cy="980" r="180" fill="#EB6711" fill-opacity="0.16"/>
+
+  <g filter="url(#softShadow)">
+    <rect x="140" y="110" width="1320" height="980" rx="52" fill="#0C1238" fill-opacity="0.45"/>
+    <rect x="182" y="150" width="1236" height="900" rx="38" fill="url(#frame)"/>
+  </g>
+
+  <rect x="238" y="206" width="1122" height="74" rx="18" fill="#F8FAFF" stroke="#D4DDF4"/>
+  <text x="282" y="254" font-size="34" fill="#1B2475" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="800">Mentorship Performance Command Center</text>
+
+  <g transform="translate(244,308)">
+    <rect width="296" height="168" rx="20" fill="#FFFFFF" stroke="#D8E1F6"/>
+    <text x="28" y="54" font-size="20" fill="#57658C" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="700">Subscriber Growth</text>
+    <text x="28" y="108" font-size="54" fill="#1B2475" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="800">+124%</text>
+    <rect x="28" y="124" width="150" height="14" rx="7" fill="#EB6711" fill-opacity="0.22"/>
+    <rect x="28" y="124" width="116" height="14" rx="7" fill="url(#orange)"/>
+  </g>
+
+  <g transform="translate(566,308)">
+    <rect width="296" height="168" rx="20" fill="#FFFFFF" stroke="#D8E1F6"/>
+    <text x="28" y="54" font-size="20" fill="#57658C" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="700">Learner Completion</text>
+    <text x="28" y="108" font-size="54" fill="#1B2475" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="800">91%</text>
+    <rect x="28" y="124" width="150" height="14" rx="7" fill="#1B2475" fill-opacity="0.18"/>
+    <rect x="28" y="124" width="136" height="14" rx="7" fill="url(#blue)"/>
+  </g>
+
+  <g transform="translate(888,308)">
+    <rect width="472" height="168" rx="20" fill="#FFFFFF" stroke="#D8E1F6"/>
+    <text x="30" y="54" font-size="20" fill="#57658C" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="700">Weekly Active Sessions</text>
+    <polyline points="34,132 100,100 166,112 232,78 298,90 364,54 430,68" fill="none" stroke="url(#orange)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="232" cy="78" r="8" fill="#EB6711"/>
+    <circle cx="364" cy="54" r="8" fill="#EB6711"/>
+    <line x1="34" y1="142" x2="430" y2="142" stroke="#D6DEEF" stroke-width="2"/>
+  </g>
+
+  <g transform="translate(244,512)">
+    <rect width="756" height="484" rx="26" fill="#FFFFFF" stroke="#D8E1F6"/>
+    <text x="34" y="56" font-size="30" fill="#1B2475" font-family="Sora, Plus Jakarta Sans, Arial, sans-serif" font-weight="700">Learning Journey Pipeline</text>
+
+    <g transform="translate(34,92)">
+      <rect width="206" height="344" rx="18" fill="#EEF2FF"/>
+      <text x="20" y="48" font-size="24" fill="#1B2475" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="800">Discover</text>
+      <text x="20" y="84" font-size="18" fill="#47567C" font-family="Plus Jakarta Sans, Arial, sans-serif">Consultation call</text>
+      <text x="20" y="114" font-size="18" fill="#47567C" font-family="Plus Jakarta Sans, Arial, sans-serif">Goal mapping</text>
+      <text x="20" y="144" font-size="18" fill="#47567C" font-family="Plus Jakarta Sans, Arial, sans-serif">Skill assessment</text>
+      <rect x="20" y="266" width="160" height="12" rx="6" fill="#DCE4FA"/>
+      <rect x="20" y="266" width="142" height="12" rx="6" fill="#1B2475"/>
+      <text x="20" y="312" font-size="16" fill="#1B2475" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="700">Conversion rate: 89%</text>
+    </g>
+
+    <g transform="translate(274,92)">
+      <rect width="206" height="344" rx="18" fill="#FFF2E8"/>
+      <text x="20" y="48" font-size="24" fill="#B64D0D" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="800">Coach</text>
+      <text x="20" y="84" font-size="18" fill="#6A4A35" font-family="Plus Jakarta Sans, Arial, sans-serif">1-on-1 sessions</text>
+      <text x="20" y="114" font-size="18" fill="#6A4A35" font-family="Plus Jakarta Sans, Arial, sans-serif">Project feedback</text>
+      <text x="20" y="144" font-size="18" fill="#6A4A35" font-family="Plus Jakarta Sans, Arial, sans-serif">Career guidance</text>
+      <rect x="20" y="266" width="160" height="12" rx="6" fill="#FFE1CC"/>
+      <rect x="20" y="266" width="148" height="12" rx="6" fill="#EB6711"/>
+      <text x="20" y="312" font-size="16" fill="#B64D0D" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="700">Engagement: 93%</text>
+    </g>
+
+    <g transform="translate(514,92)">
+      <rect width="206" height="344" rx="18" fill="#EEF7FF"/>
+      <text x="20" y="48" font-size="24" fill="#1B2475" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="800">Launch</text>
+      <text x="20" y="84" font-size="18" fill="#47567C" font-family="Plus Jakarta Sans, Arial, sans-serif">Portfolio review</text>
+      <text x="20" y="114" font-size="18" fill="#47567C" font-family="Plus Jakarta Sans, Arial, sans-serif">Interview drills</text>
+      <text x="20" y="144" font-size="18" fill="#47567C" font-family="Plus Jakarta Sans, Arial, sans-serif">Placement strategy</text>
+      <rect x="20" y="266" width="160" height="12" rx="6" fill="#DCE4FA"/>
+      <rect x="20" y="266" width="153" height="12" rx="6" fill="url(#blue)"/>
+      <text x="20" y="312" font-size="16" fill="#1B2475" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="700">Placement ready: 96%</text>
+    </g>
+
+    <line x1="246" y1="264" x2="274" y2="264" stroke="#D0D8EF" stroke-width="6" stroke-linecap="round"/>
+    <line x1="486" y1="264" x2="514" y2="264" stroke="#D0D8EF" stroke-width="6" stroke-linecap="round"/>
+  </g>
+
+  <g transform="translate(1028,512)">
+    <rect width="332" height="484" rx="26" fill="#FFFFFF" stroke="#D8E1F6"/>
+    <text x="28" y="56" font-size="28" fill="#1B2475" font-family="Sora, Plus Jakarta Sans, Arial, sans-serif" font-weight="700">Growth Signals</text>
+
+    <text x="28" y="104" font-size="18" fill="#5C688C" font-family="Plus Jakarta Sans, Arial, sans-serif">Subscriber source quality</text>
+    <rect x="28" y="122" width="274" height="14" rx="7" fill="#E1E8F8"/>
+    <rect x="28" y="122" width="224" height="14" rx="7" fill="#1B2475"/>
+
+    <text x="28" y="176" font-size="18" fill="#5C688C" font-family="Plus Jakarta Sans, Arial, sans-serif">CTA click-through</text>
+    <rect x="28" y="194" width="274" height="14" rx="7" fill="#FFE3CF"/>
+    <rect x="28" y="194" width="244" height="14" rx="7" fill="#EB6711"/>
+
+    <text x="28" y="248" font-size="18" fill="#5C688C" font-family="Plus Jakarta Sans, Arial, sans-serif">Newsletter intent score</text>
+    <rect x="28" y="266" width="274" height="14" rx="7" fill="#E1E8F8"/>
+    <rect x="28" y="266" width="256" height="14" rx="7" fill="#1B2475"/>
+
+    <rect x="28" y="322" width="274" height="136" rx="16" fill="#F5F8FF" stroke="#D9E2F5"/>
+    <text x="48" y="374" font-size="42" fill="#1B2475" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="800">4.9/5</text>
+    <text x="48" y="408" font-size="19" fill="#5C688C" font-family="Plus Jakarta Sans, Arial, sans-serif">Average learner satisfaction</text>
+    <text x="48" y="438" font-size="18" fill="#B9540D" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="700">Trusted mentorship experience</text>
+  </g>
+</svg>

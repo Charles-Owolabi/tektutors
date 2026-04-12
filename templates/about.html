@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container page-hero-grid">
+        <div class="reveal">
+            <p class="kicker">About Tektutors</p>
+            <h1>We mentor people, not just teach tools.</h1>
+            <p>
+                Tektutors was built for one mission: help ambitious learners become high-impact data professionals through
+                personalized, mentorship-driven training that fits real life.
+            </p>
+        </div>
+        <div class="hero-visual reveal">
+            <img
+                src="{{ url_for('static', filename='images/mentorship-network.svg') }}"
+                alt="Mentorship network connecting learners, projects, and career outcomes"
+                loading="lazy"
+                decoding="async"
+                width="1400"
+                height="1000"
+                class="hero-image"
+            >
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container about-grid">
+        <article class="about-card reveal">
+            <h2>Our Vision</h2>
+            <p>
+                To build Africa's most trusted premium learning company for data and AI careers, where every learner gets
+                individual guidance, practical skills, and clear outcomes.
+            </p>
+        </article>
+        <article class="about-card reveal">
+            <h2>Our Method</h2>
+            <p>
+                One-on-one mentorship. Project-based practice. Fast feedback loops. Flexible schedules that include
+                evening and night sessions for working professionals.
+            </p>
+        </article>
+        <article class="about-card reveal">
+            <h2>Our Promise</h2>
+            <p>
+                You will not be left guessing. Every session gives you clarity, confidence, and direction you can apply immediately.
+            </p>
+        </article>
+    </div>
+</section>
+
+<section class="section section-alt">
+    <div class="container story-grid">
+        <div class="reveal">
+            <p class="kicker">What Makes Us Different</p>
+            <h2>Premium attention for serious growth.</h2>
+            <p>
+                Large classes teach broad content. We deliver tailored progress. Our mentors align each lesson with your role,
+                your target industry, and your timeline.
+            </p>
+            <p>
+                If you are switching careers, leveling up at work, or preparing for global opportunities, we help you move faster with less noise.
+            </p>
+        </div>
+        <aside class="story-card reveal">
+            <h3>Tektutors Values</h3>
+            <ul>
+                <li>Excellence without overwhelm.</li>
+                <li>Mentorship with accountability.</li>
+                <li>Learning that respects your schedule.</li>
+                <li>Skills that convert to real career outcomes.</li>
+            </ul>
+        </aside>
+    </div>
+</section>
+
+<section class="section cta-section">
+    <div class="container cta-inner reveal">
+        <p class="kicker">Ready for Transformation?</p>
+        <h2>Train with mentors who treat your career like a mission.</h2>
+        <a class="btn btn-primary" href="{{ url_for('contact') }}#contact-form">Book a Free Consultation</a>
+    </div>
+</section>
+{% endblock %}

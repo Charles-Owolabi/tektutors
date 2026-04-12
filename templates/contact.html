@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container page-hero-grid">
+        <div class="reveal">
+            <p class="kicker">Contact</p>
+            <h1>Let us design your personal data-learning roadmap.</h1>
+            <p>
+                Tell us where you are now, where you want to go, and when you can learn.
+                We will craft a training plan that fits your goals and schedule.
+            </p>
+        </div>
+        <div class="hero-visual reveal">
+            <img
+                src="{{ url_for('static', filename='images/flexible-schedule.svg') }}"
+                alt="Flexible mentorship schedule with morning, evening, and night classes"
+                loading="lazy"
+                decoding="async"
+                width="1400"
+                height="1000"
+                class="hero-image"
+            >
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container contact-grid">
+        <aside class="contact-info reveal">
+            <h2>Reach Us Directly</h2>
+            <p>Email: <a href="mailto:info@tektutors.com.ng">info@tektutors.com.ng</a></p>
+            <p>Phone: <a href="tel:+2348063584517">+2348063584517</a></p>
+            <p>Website: <a href="https://www.tektutors.com.ng" target="_blank" rel="noopener">www.tektutors.com.ng</a></p>
+            <div class="social-links social-links-inline">
+                <a class="social-link" href="https://www.instagram.com/tektutorsng" target="_blank" rel="noopener">Instagram</a>
+                <a class="social-link" href="https://web.facebook.com/tektutors" target="_blank" rel="noopener">Facebook</a>
+                <a class="social-link" href="https://linkedin.com/company/tektutorsng" target="_blank" rel="noopener">LinkedIn</a>
+            </div>
+            <img
+                src="{{ url_for('static', filename='images/mentorship-network.svg') }}"
+                alt="One-on-one mentorship network visualization"
+                loading="lazy"
+                decoding="async"
+                width="1400"
+                height="1000"
+                class="feature-image"
+            >
+            <p class="contact-note">
+                Response time: Within 24 hours. Urgent inquiry? Use the WhatsApp button for faster response.
+            </p>
+        </aside>
+
+        <form id="contact-form" class="contact-form reveal" action="{{ url_for('contact') }}" method="post">
+            <h2>Book a Free Consultation</h2>
+            <p>Share your goals and we will match you with the right mentor and schedule.</p>
+
+            <label for="name">Full Name</label>
+            <input id="name" name="name" type="text" placeholder="Your full name" required>
+
+            <label for="email">Email Address</label>
+            <input id="email" name="email" type="email" placeholder="you@example.com" required>
+
+            <label for="phone">Phone Number</label>
+            <input id="phone" name="phone" type="tel" placeholder="+234...">
+
+            <label for="program">Program of Interest</label>
+            <select id="program" name="program">
+                <option value="">Select a program</option>
+                {% for program in programs %}
+                <option value="{{ program.name }}">{{ program.name }}</option>
+                {% endfor %}
+                <option value="Not sure yet">Not sure yet</option>
+            </select>
+
+            <label for="availability">Preferred Schedule</label>
+            <select id="availability" name="availability">
+                <option value="">Choose your preferred time</option>
+                <option value="Morning">Morning</option>
+                <option value="Afternoon">Afternoon</option>
+                <option value="Evening">Evening</option>
+                <option value="Night classes">Night classes</option>
+                <option value="Weekend">Weekend</option>
+                <option value="Flexible">Flexible</option>
+            </select>
+
+            <label for="message">Your Goal</label>
+            <textarea id="message" name="message" rows="5" placeholder="What do you want to achieve with data skills?" required></textarea>
+
+            <input type="text" name="company" tabindex="-1" autocomplete="off" class="honeypot" aria-hidden="true">
+
+            <button type="submit" class="btn btn-primary">Submit Request</button>
+        </form>
+    </div>
+</section>
+{% endblock %}
