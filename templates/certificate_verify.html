@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="section dashboard-section">
+    <div class="container">
+        <article class="dashboard-card reveal visible">
+            {% if certificate %}
+            <p class="kicker">Certificate Verified</p>
+            <h1>{{ certificate.learner_name }}</h1>
+            <p>This certificate is valid for {{ certificate.classroom_title }}.</p>
+            <div class="program-meta">
+                <span>{{ certificate.course_duration }}</span>
+                <span>Mentor: {{ certificate.mentor_name }}</span>
+                <span>{{ certificate_id }}</span>
+            </div>
+            {% else %}
+            <p class="kicker">Certificate Not Found</p>
+            <h1>Unable to verify certificate.</h1>
+            <p>The certificate ID is invalid or the learner has not met the completion requirements.</p>
+            {% endif %}
+        </article>
+    </div>
+</section>
+{% endblock %}

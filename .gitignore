@@ -9,6 +9,12 @@ env/
 
 # Local data submissions
 data/*.csv
+data/*.db
+data/zoho_token.json
+data/uploads/
+
+# Logs
+*.log
 
 # Environment variables
 .env

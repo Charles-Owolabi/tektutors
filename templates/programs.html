@@ -12,15 +12,9 @@
             </p>
         </div>
         <div class="hero-visual reveal">
-            <img
-                src="{{ url_for('static', filename='images/hero-data-ops.svg') }}"
-                alt="Professional analytics program dashboard and learning pipeline"
-                loading="lazy"
-                decoding="async"
-                width="1600"
-                height="1200"
-                class="hero-image"
-            >
+            <img src="{{ url_for('static', filename='images/hero-mentorship.png') }}"
+                alt="Mentor-led data training experience with practical analytics dashboards and guided learning"
+                loading="lazy" decoding="async" width="1600" height="1200" class="hero-image">
         </div>
     </div>
 </section>
@@ -31,15 +25,25 @@
             {% for program in programs %}
             <article class="program-card reveal">
                 <div class="program-icon" aria-hidden="true">
-                    <span>{{ loop.index }}</span>
+                    {{ program.icon|safe }}
                 </div>
-                <h2>{{ program.name }}</h2>
-                <p>{{ program.summary }}</p>
-                <div class="program-meta">
-                    <span>{{ program.duration }}</span>
-                    <span>{{ program.level }}</span>
+                <div class="program-content">
+                    <h2>{{ program.name }}</h2>
+                    <p>{{ program.summary }}</p>
+                    <div class="program-meta">
+                        <span>{{ program.duration }}</span>
+                        <span>{{ program.level }}</span>
+                    </div>
                 </div>
-                <a class="text-link" href="{{ url_for('contact') }}#contact-form">Speak with a mentor</a>
+                <div class="program-action">
+                    <a class="btn-tertiary" href="{{ url_for('contact') }}#contact-form"><span>Speak with a
+                            mentor</span> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg></a>
+                </div>
             </article>
             {% endfor %}
         </div>
@@ -49,7 +53,7 @@
 <section class="section section-alt">
     <div class="container">
         <div class="section-heading reveal">
-            <p class="kicker">Core Tool Stack</p>
+            <p class="kicker">Core tool stack</p>
             <h2>Develop fluency across modern analytics tools.</h2>
         </div>
         <div class="tools-grid">
@@ -63,24 +67,24 @@
 <section class="section">
     <div class="container">
         <div class="section-heading reveal">
-            <p class="kicker">Learning Experience</p>
+            <p class="kicker">Learning experience</p>
             <h2>What to expect in every track.</h2>
         </div>
         <div class="value-grid">
             <article class="value-card reveal">
-                <h3>Personal Mentorship</h3>
+                <h3>Personal mentorship</h3>
                 <p>Work directly with an experienced trainer who adjusts to your pace every week.</p>
             </article>
             <article class="value-card reveal">
-                <h3>Applied Projects</h3>
+                <h3>Applied projects</h3>
                 <p>Practice with scenarios drawn from finance, operations, marketing, and product environments.</p>
             </article>
             <article class="value-card reveal">
-                <h3>Flexible Sessions</h3>
+                <h3>Flexible sessions</h3>
                 <p>Choose weekday, weekend, or night classes that fit your commitments.</p>
             </article>
             <article class="value-card reveal">
-                <h3>Career Direction</h3>
+                <h3>Career direction</h3>
                 <p>Align projects and learning outcomes with the role you want next.</p>
             </article>
         </div>
@@ -89,9 +93,13 @@
 
 <section class="section cta-section">
     <div class="container cta-inner reveal">
-        <p class="kicker">Take Action</p>
+        <p class="kicker">Take action</p>
         <h2>Pick your track. Build your portfolio. Accelerate your career.</h2>
-        <a class="btn btn-primary" href="{{ url_for('contact') }}#contact-form">Start Your Learning Journey</a>
+        <p>Every program can now be delivered through the Tektutors Learning Hub with classroom streams, modules, and assignment tracking.</p>
+        <div class="hero-cta">
+            <a class="btn btn-secondary" href="{{ url_for('lms') }}">See the Learning Hub</a>
+        </div>
+        <a class="btn btn-primary" href="{{ url_for('contact') }}#contact-form">Start your learning journey</a>
     </div>
 </section>
 {% endblock %}

@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="section dashboard-section" data-portal-tabs>
+    <div class="container">
+        <div class="section-heading reveal">
+            <p class="kicker">Mentor dashboard</p>
+            <h1>Manage classrooms, class updates, and learner submissions.</h1>
+        </div>
+        {% if current_user.must_change_password %}
+        <article class="dashboard-card reveal">
+            <p class="kicker">Password reset available</p>
+            <h2>Your account is still using a temporary password.</h2>
+            <p>You can continue working in the portal and update it whenever you're ready from your account page.</p>
+            <a class="btn btn-secondary" href="{{ url_for('account_password') }}">Set a personal password</a>
+        </article>
+        {% endif %}
+        <div class="lms-stats dashboard-stats-strip reveal">
+            {% for stat in dashboard_data.stats %}
+            <article class="lms-stat-card">
+                <p>{{ stat.label }}</p>
+                <h2>{{ stat.value }}</h2>
+            </article>
+            {% endfor %}
+        </div>
+        <nav class="portal-toolbar reveal" aria-label="Mentor dashboard shortcuts">
+            <div class="portal-toolbar-inner">
+                <select data-jump-select aria-label="Choose mentor workspace">
+                    <option value="">Choose workspace</option>
+                    <option value="#mentor-classrooms">My classrooms</option>
+                    <option value="#mentor-live-training">Live training</option>
+                    <option value="#mentor-submissions">Recent submissions</option>
+                </select>
+                <div class="portal-toolbar-actions portal-tab-buttons" role="tablist" aria-label="Mentor workspaces">
+                    <button class="portal-tab-btn active" type="button" data-tab-target="#mentor-classrooms" role="tab" aria-selected="true">Classrooms</button>
+                    <button class="portal-tab-btn" type="button" data-tab-target="#mentor-submissions" role="tab" aria-selected="false">Submissions</button>
+                    <button class="portal-tab-btn" type="button" data-tab-target="#mentor-live-training" role="tab" aria-selected="false">Live</button>
+                </div>
+            </div>
+        </nav>
+    </div>
+</section>
+
+<section class="section dashboard-tab-panel portal-tab-panel active" id="mentor-classrooms">
+    <div class="container">
+        <div class="section-heading reveal">
+            <p class="kicker">My classrooms</p>
+            <h2>Your active teaching spaces.</h2>
+        </div>
+        <div class="workspace-filter-bar reveal">
+            <label for="mentor-classroom-filter">Search classrooms</label>
+            <input id="mentor-classroom-filter" type="search" placeholder="Search by class, cohort, code, schedule" data-workspace-filter="#mentor-classrooms">
+        </div>
+        <div class="dashboard-grid">
+            {% for classroom in dashboard_data.classrooms %}
+            <article class="dashboard-card reveal" data-filter-card>
+                <div class="lms-classroom-header">
+                    <span class="lms-classroom-code">{{ classroom.code }}</span>
+                    <span class="lms-status-pill">{{ classroom.student_count }} learners</span>
+                </div>
+                <h3>{{ classroom.title }}</h3>
+                <p>{{ classroom.description|linkify("Open classroom link") }}</p>
+                <div class="program-meta">
+                    <span>{{ classroom.cohort }}</span>
+                    <span>{{ classroom.schedule }}</span>
+                </div>
+                <p><strong>Assignments:</strong> {{ classroom.assignment_count }}</p>
+                <p><strong>Materials:</strong> {{ classroom.material_count }}</p>
+                <p><strong>Submissions:</strong> {{ classroom.submission_count }}</p>
+                <div class="lms-card-progress-footer">
+                    <span class="lms-duration-pill">{{ classroom.course_duration }}</span>
+                    <div class="lms-progress">
+                        <div class="lms-progress-top">
+                            <span>Class progress</span>
+                            <strong>{{ classroom.progress }}%</strong>
+                        </div>
+                        <div class="lms-progress-track" aria-hidden="true">
+                            <span style="width: {{ classroom.progress }}%"></span>
+                        </div>
+                        <p class="lms-stream-meta">{{ classroom.progress_label }}</p>
+                    </div>
+                </div>
+                <a class="btn btn-secondary" href="{{ url_for('lms_classroom', slug=classroom.slug) }}">Open classroom</a>
+            </article>
+            {% else %}
+            <article class="dashboard-card reveal">
+                <h3>No classrooms assigned yet</h3>
+                <p>Your mentor classrooms will appear here once they are linked to your account.</p>
+            </article>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="section dashboard-tab-panel portal-tab-panel" id="mentor-live-training">
+    <div class="container">
+        <div class="section-heading reveal">
+            <p class="kicker">Live Training</p>
+            <h2>Upcoming live sessions you teach.</h2>
+        </div>
+        <div class="dashboard-grid">
+            {% for meeting in dashboard_data.meetings %}
+            <article class="dashboard-card reveal lms-meeting-card {% if meeting.is_live %}lms-meeting-live{% endif %}">
+                <div class="lms-meeting-badge-wrap">
+                    {% if meeting.is_live %}
+                    <span class="lms-status-pill lms-status-live">LIVE NOW</span>
+                    {% else %}
+                    <span class="lms-status-pill lms-status-upcoming">Upcoming</span>
+                    {% endif %}
+                </div>
+                <h3>{{ meeting.topic }}</h3>
+                <p class="lms-stream-meta">{{ meeting.classroom_title }}</p>
+                {% if meeting.agenda %}
+                <p class="lms-meeting-agenda">{{ meeting.agenda|linkify("Open session link") }}</p>
+                {% endif %}
+                
+                <div class="lms-meeting-info">
+                    <p><strong>Starts:</strong> {{ meeting.start_time_formatted }}</p>
+                    <p><strong>Duration:</strong> {{ meeting.duration }} minutes</p>
+                </div>
+
+                <div class="lms-meeting-actions">
+                    <a href="{{ meeting.start_link }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary lms-action-btn">Start meeting as host</a>
+                    <a href="{{ url_for('lms_classroom', slug=meeting.classroom_slug) }}" class="btn btn-secondary lms-action-btn">Go to classroom</a>
+                </div>
+            </article>
+            {% else %}
+            <article class="dashboard-card reveal">
+                <h3>No upcoming sessions scheduled</h3>
+                <p>Open a classroom to schedule a new live training session for your learners.</p>
+            </article>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="section dashboard-tab-panel portal-tab-panel" id="mentor-submissions">
+    <div class="container">
+        <div class="section-heading reveal">
+            <p class="kicker">Recent Submissions</p>
+            <h2>Latest work from learners.</h2>
+        </div>
+        <div class="workspace-filter-bar reveal">
+            <label for="mentor-submission-filter">Search submissions</label>
+            <input id="mentor-submission-filter" type="search" placeholder="Search by learner, class, assignment, status" data-workspace-filter="#mentor-submissions">
+        </div>
+        <div class="dashboard-grid">
+            {% for submission in dashboard_data.submissions %}
+            <article class="dashboard-card reveal" data-filter-card>
+                <h3>{{ submission.assignment_title }}</h3>
+                <p>{{ submission.student_name }} • {{ submission.classroom_title }}</p>
+                <p class="lms-stream-meta">Submitted {{ submission.submitted_label }}</p>
+                <span class="lms-status-pill">{{ submission.status }}</span>
+                {% if submission.grade %}
+                <p><strong>Grade:</strong> {{ submission.grade }}</p>
+                {% endif %}
+                {% if submission.feedback %}
+                <p><strong>Feedback:</strong> {{ submission.feedback|linkify("Open feedback link") }}</p>
+                {% endif %}
+                <a class="btn-tertiary" href="{{ url_for('lms_classroom', slug=submission.slug) }}"><span>Open classroom</span> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></a>
+            </article>
+            {% else %}
+            <article class="dashboard-card reveal">
+                <h3>No submissions yet</h3>
+                <p>Learner submissions will surface here once work starts coming in.</p>
+            </article>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

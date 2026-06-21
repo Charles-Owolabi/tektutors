@@ -10,13 +10,27 @@
     <meta property="og:title" content="{{ page_title or 'Tektutors | Premium Data Mentorship' }}">
     <meta property="og:description" content="{{ meta_description or 'Learn data skills your way with personalized mentorship and flexible schedules.' }}">
     <meta property="og:url" content="https://www.tektutors.com.ng/">
+    <meta property="og:image" content="{{ url_for('static', filename='images/tektutors-logo.svg', _external=True) }}">
     <meta name="twitter:card" content="summary_large_image">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <script defer src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css', v='20260616-dashboard-classroom-card-width') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/site_logo.png') }}">
+    <script defer src="{{ url_for('static', filename='js/main.js', v='20260616-text-visibility-fixes') }}"></script>
+
+    {% if ga_tracking_id %}
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga_tracking_id }}"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', '{{ ga_tracking_id }}');
+    </script>
+    {% endif %}
 </head>
 <body>
     <a class="skip-link" href="#content">Skip to content</a>
@@ -44,7 +58,18 @@
                 <a class="menu-link {% if active_page == 'about' %}active{% endif %}" href="{{ url_for('about') }}">About</a>
                 <a class="menu-link {% if active_page == 'programs' %}active{% endif %}" href="{{ url_for('programs') }}">Programs</a>
                 <a class="menu-link {% if active_page == 'contact' %}active{% endif %}" href="{{ url_for('contact') }}">Contact</a>
-                <a class="btn btn-primary nav-cta" href="{{ url_for('contact') }}#contact-form">Book a Free Consultation</a>
+                <a class="menu-link {% if active_page == 'lms' %}active{% endif %}" href="{{ lms_nav_url }}">Learning Hub</a>
+                {% if current_user %}
+                <a class="menu-link" href="{{ url_for('dashboard') }}">Dashboard</a>
+                <form class="nav-auth-form" action="{{ url_for('logout') }}" method="post">
+                    {{ csrf_field() }}
+                    <button type="submit" class="btn btn-secondary nav-auth-btn">Log out</button>
+                </form>
+                {% else %}
+                <a class="menu-link" href="{{ url_for('login') }}">Sign in</a>
+                <a class="btn btn-secondary nav-auth-btn" href="{{ url_for('register') }}">Get access</a>
+                {% endif %}
+                <a class="btn btn-primary nav-cta" href="{{ url_for('contact') }}#contact-form">Book a consultation</a>
             </div>
         </nav>
     </header>
@@ -66,12 +91,15 @@
     <section class="newsletter-band" id="newsletter">
         <div class="container newsletter-inner reveal">
             <div>
-                <p class="kicker">Stay Ahead</p>
+                <p class="kicker">Stay ahead</p>
                 <h2>Get practical data insights every week.</h2>
                 <p>Join our premium newsletter for career tips, class openings, and mentorship opportunities.</p>
             </div>
             <form class="newsletter-form" action="{{ url_for('newsletter') }}" method="post">
+                {{ csrf_field() }}
                 <input type="hidden" name="next_page" value="{{ 'index' if active_page == 'home' else active_page }}">
+                <input type="hidden" name="form_started_at" value="{{ form_started_at }}">
+                <input type="text" name="website" tabindex="-1" autocomplete="off" class="honeypot" aria-hidden="true">
                 <input type="email" name="email" placeholder="Enter your email" aria-label="Email address" required>
                 <input type="text" name="interest" placeholder="Your focus (e.g. Power BI, Python)">
                 <button type="submit" class="btn btn-primary">Subscribe</button>
@@ -91,24 +119,27 @@
                         height="300"
                     >
                 </a>
-                <p class="footer-copy">Learn Data Skills Your Way. On Your Schedule. With Real Mentors.</p>
+                <p class="footer-copy">Learn data skills your way, on your schedule, with real mentors.</p>
             </div>
             <div>
                 <h3>Contact</h3>
-                <p><a href="mailto:info@tektutors.com.ng">info@tektutors.com.ng</a></p>
-                <p><a href="tel:+2348063584517">+2348063584517</a></p>
-                <p><a href="https://www.tektutors.com.ng" target="_blank" rel="noopener">www.tektutors.com.ng</a></p>
+                <p><a href="mailto:info@tektutors.com.ng">Email Tektutors</a></p>
+                <p><a href="tel:+2348063584517">Call Tektutors</a></p>
+                <p><a href="https://www.tektutors.com.ng" target="_blank" rel="noopener">Visit Tektutors Online</a></p>
             </div>
             <div>
                 <h3>Quick Links</h3>
                 <p><a href="{{ url_for('about') }}">About</a></p>
                 <p><a href="{{ url_for('programs') }}">Programs</a></p>
+                <p><a href="{{ lms_nav_url }}">Learning Hub</a></p>
+                <p><a href="{{ url_for('careers') }}">Careers</a></p>
                 <p><a href="{{ url_for('contact') }}">Contact</a></p>
                 <h3>Follow Us</h3>
                 <div class="social-links">
+                    <a class="social-link" href="https://twitter.com/tek_tutors" target="_blank" rel="noopener">Twitter / X</a>
                     <a class="social-link" href="https://www.instagram.com/tektutorsng" target="_blank" rel="noopener">Instagram</a>
                     <a class="social-link" href="https://web.facebook.com/tektutors" target="_blank" rel="noopener">Facebook</a>
-                    <a class="social-link" href="https://linkedin.com/company/tektutorsng" target="_blank" rel="noopener">LinkedIn</a>
+                    <a class="social-link" href="https://www.linkedin.com/company/tektutorsng/" target="_blank" rel="noopener">LinkedIn</a>
                 </div>
             </div>
         </div>
@@ -120,12 +151,20 @@
 
     <a
         class="whatsapp-button"
-        href="https://wa.me/2348063584517?text=Hello%20Tektutors%2C%20I%20want%20to%20start%20my%20data%20learning%20journey."
+        href="https://wa.me/2348136325464?text=Hello%20Tektutors%2C%20I%20want%20to%20start%20my%20data%20learning%20journey."
         target="_blank"
         rel="noopener"
         aria-label="Chat on WhatsApp"
     >
-        Chat on WhatsApp
+        <svg class="whatsapp-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M19.11 17.19c-.27-.13-1.58-.78-1.82-.87-.24-.09-.41-.13-.58.14-.17.27-.67.87-.82 1.05-.15.18-.31.2-.58.07-.27-.13-1.13-.42-2.16-1.34-.8-.72-1.35-1.62-1.51-1.89-.16-.27-.02-.42.12-.55.12-.12.27-.31.41-.47.14-.16.18-.27.27-.45.09-.18.05-.34-.02-.47-.07-.13-.58-1.39-.8-1.9-.21-.5-.43-.43-.58-.44h-.5c-.18 0-.47.07-.72.34-.25.27-.95.93-.95 2.27s.97 2.63 1.11 2.81c.14.18 1.91 2.92 4.64 4.1.65.28 1.16.45 1.56.57.65.21 1.24.18 1.71.11.52-.08 1.58-.65 1.8-1.28.22-.63.22-1.17.15-1.28-.07-.11-.24-.18-.51-.31z"/>
+            <path d="M16.02 3.2c-7.06 0-12.8 5.72-12.8 12.75 0 2.24.59 4.42 1.7 6.34L3.1 28.8l6.71-1.76a12.85 12.85 0 0 0 6.2 1.59h.01c7.06 0 12.8-5.72 12.8-12.75S23.08 3.2 16.02 3.2zm0 23.22h-.01a10.7 10.7 0 0 1-5.46-1.49l-.39-.23-3.98 1.05 1.06-3.87-.25-.4a10.52 10.52 0 0 1-1.63-5.6c0-5.85 4.8-10.61 10.69-10.61 2.85 0 5.53 1.1 7.54 3.1a10.5 10.5 0 0 1 3.14 7.5c0 5.85-4.8 10.61-10.7 10.61z"/>
+        </svg>
+        <span>Chat on WhatsApp</span>
+    </a>
+
+    <a href="#top" id="backToTopBtn" class="back-to-top" aria-label="Back to top">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg>
     </a>
 </body>
 </html>

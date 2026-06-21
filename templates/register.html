@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="section auth-section">
+    <div class="container auth-grid">
+        <div class="auth-panel reveal">
+            <p class="kicker">Learning Hub access</p>
+            <h1>Learning Hub accounts are created by the admin team.</h1>
+            <p>
+                Candidates do not create Learning Hub accounts directly. Access is only granted after the admin confirms that
+                you have registered and meet the requirements for your class.
+            </p>
+        </div>
+        <div class="contact-form auth-form reveal">
+            <h2>How access works</h2>
+            <p>1. Register for your class with Tektutors.</p>
+            <p>2. The admin reviews your registration and confirms eligibility.</p>
+            <p>3. Approved candidates receive their Learning Hub login details from the admin.</p>
+            <p>4. Use those details on the sign-in page to access your classroom.</p>
+            <div class="hero-cta">
+                <a class="btn btn-primary" href="{{ url_for('login') }}">Sign in</a>
+                <a class="btn btn-secondary" href="{{ url_for('registration') }}">Start registration</a>
+            </div>
+            <p class="auth-switch">Already received your login details? <a href="{{ url_for('login') }}">Sign in here</a>.</p>
+        </div>
+    </div>
+</section>
+{% endblock %}

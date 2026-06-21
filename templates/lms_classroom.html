@@ -1,0 +1,895 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-hero lms-classroom-hero">
+    <div class="container">
+        <div class="lms-banner reveal lms-theme-{{ classroom.theme }}">
+            <div>
+                <p class="kicker">{{ classroom.code }} • {{ classroom.cohort }}</p>
+                <h1>{{ classroom.title }}</h1>
+                <p>{{ classroom.description|linkify("Open classroom link") }}</p>
+            </div>
+            <div class="lms-banner-meta">
+                <span>{{ classroom.schedule }}</span>
+                <span>{{ classroom.course_duration }}</span>
+                <span class="lms-banner-progress">
+                    <strong>{{ classroom.progress }}%</strong>
+                    <small>Progress</small>
+                    <i aria-hidden="true"><b style="width: {{ classroom.progress }}%"></b></i>
+                </span>
+                <span>Mentor: {{ classroom.mentor_name }}</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section lms-classroom-section" data-portal-tabs>
+    <div class="container">
+        <nav class="portal-toolbar reveal" aria-label="Classroom shortcuts">
+            <div class="portal-toolbar-inner">
+                <a class="classroom-dashboard-action" href="{{ url_for('dashboard') }}">Dashboard</a>
+                <div class="portal-toolbar-actions portal-tab-buttons classroom-tab-buttons" role="tablist" aria-label="Classroom resource tabs">
+                    <button class="portal-tab-btn active" type="button" data-tab-target="#class-materials" role="tab" aria-selected="true">Resources</button>
+                    <button class="portal-tab-btn" type="button" data-tab-target="#live-training-sessions" role="tab" aria-selected="false">Live</button>
+                    <button class="portal-tab-btn" type="button" data-tab-target="#class-stream" role="tab" aria-selected="false">Posts</button>
+                    <button class="portal-tab-btn" type="button" data-tab-target="#coursework" role="tab" aria-selected="false">Coursework</button>
+                    <button class="portal-tab-btn" type="button" data-tab-target="#project" role="tab" aria-selected="false">Project</button>
+                    <button class="portal-tab-btn" type="button" data-tab-target="#certificate" role="tab" aria-selected="false">Certificate</button>
+                    <button class="portal-tab-btn" type="button" data-tab-target="#scores" role="tab" aria-selected="false">Scores</button>
+                    <button class="portal-tab-btn" type="button" data-tab-target="#attendance" role="tab" aria-selected="false">Attendance</button>
+                    {% if current_user.role in ["mentor", "admin"] %}
+                    <button class="portal-tab-btn" type="button" data-tab-target="#learner-submissions" role="tab" aria-selected="false">Submissions</button>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+    </div>
+    <div class="container lms-layout">
+        <aside class="lms-sidebar reveal">
+            <div class="lms-sidebar-card">
+                <p class="kicker">{{ "Learner" if current_user.role == "student" else current_user.role|title }} workspace</p>
+                <h2>{{ current_user.name }}</h2>
+                <p>{{ current_user.email }}</p>
+                {% if current_user.must_change_password %}
+                <p>Your account is still using a temporary password. You can update it anytime from here.</p>
+                {% endif %}
+                <a class="btn btn-secondary" href="{{ url_for('dashboard') }}">Back to dashboard</a>
+                <a class="btn-tertiary" href="{{ url_for('account_password') }}"><span>{% if current_user.must_change_password %}Set personal password{% else %}Change password{% endif %}</span> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></a>
+            </div>
+
+            <div class="lms-sidebar-card">
+                <h3>Class snapshot</h3>
+                <dl class="lms-mini-metrics">
+                    <div>
+                        <dt>Learners</dt>
+                        <dd>{{ classroom.members }}</dd>
+                    </div>
+                    <div>
+                        <dt>Assignments</dt>
+                        <dd>{{ classroom.assignments_due }}</dd>
+                    </div>
+                    <div>
+                        <dt>Progress</dt>
+                        <dd>{{ classroom.progress }}%</dd>
+                    </div>
+                    <div>
+                        <dt>Date started</dt>
+                        <dd>{{ classroom.course_start_label }}</dd>
+                    </div>
+                    <div>
+                        <dt>End date</dt>
+                        <dd>{{ classroom.course_end_label }}</dd>
+                    </div>
+                    <div>
+                        <dt>Expected classes</dt>
+                        <dd>{{ classroom.expected_classes }}</dd>
+                    </div>
+                </dl>
+                <p class="lms-stream-meta">{{ classroom.progress_label }}</p>
+            </div>
+
+            <div class="lms-sidebar-card">
+                <h3>People</h3>
+                <ul class="lms-people-list">
+                    {% for person in classroom.people %}
+                    <li>{{ person }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            {% if current_user.role in ["mentor", "admin"] %}
+            <details class="lms-sidebar-card portal-disclosure">
+                <summary>Class management tools</summary>
+
+                <details class="portal-nested-disclosure">
+                    <summary>Schedule live training</summary>
+                    <form class="dashboard-form" action="{{ url_for('create_classroom_meeting', slug=classroom.slug) }}" method="post">
+                        {{ csrf_field() }}
+                        <label for="meeting-topic">Session topic</label>
+                        <input id="meeting-topic" name="topic" type="text" placeholder="Week 5: Q&A Mentor Lab" required>
+                        <label for="meeting-agenda">Agenda / Description</label>
+                        <textarea id="meeting-agenda" name="agenda" rows="3" placeholder="What will be covered in this session?"></textarea>
+                        <label for="meeting-start-time">Start date and time</label>
+                        <input id="meeting-start-time" name="start_time" type="datetime-local" required>
+                        <label for="meeting-duration">Duration (minutes)</label>
+                        <input id="meeting-duration" name="duration" type="number" min="15" max="300" value="60" required>
+                        <button type="submit" class="btn btn-primary">Schedule session</button>
+                    </form>
+                </details>
+
+                <details class="portal-nested-disclosure">
+                    <summary>Create coursework module</summary>
+                    <form class="dashboard-form" action="{{ url_for('create_module', slug=classroom.slug) }}" method="post">
+                        {{ csrf_field() }}
+                        <label for="module-title">Module title</label>
+                        <input id="module-title" name="title" type="text" placeholder="Module 7: Business Reporting" required>
+                        <label for="module-status">Status</label>
+                        <select id="module-status" name="status">
+                            <option value="In Progress">In Progress</option>
+                            <option value="Next Up">Next Up</option>
+                            <option value="Opening Soon">Opening Soon</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                        <label for="module-summary">Summary</label>
+                        <textarea id="module-summary" name="summary" rows="4" placeholder="What should learners achieve in this module?" required></textarea>
+                        <label for="module-items">Module items</label>
+                        <textarea id="module-items" name="items" rows="5" placeholder="One lesson, file, or task per line"></textarea>
+                        <label for="module-resource-link">Module resource link</label>
+                        <input id="module-resource-link" name="resource_link" type="url" placeholder="Paste module resource link">
+                        <button type="submit" class="btn btn-primary">Create module</button>
+                    </form>
+                </details>
+
+                <details class="portal-nested-disclosure">
+                    <summary>Create coursework</summary>
+                    <form class="dashboard-form" action="{{ url_for('admin_create_assignment', slug=classroom.slug) }}" method="post">
+                        {{ csrf_field() }}
+                        <label for="assignment-type">Coursework type</label>
+                        <select id="assignment-type" name="assignment_type">
+                            <option value="challenge">Class challenge</option>
+                            <option value="assignment">Class assignment</option>
+                            <option value="project">Project</option>
+                            <option value="quiz">Quiz</option>
+                        </select>
+                        <label for="assignment-title">Title</label>
+                        <input id="assignment-title" name="title" type="text" placeholder="Week 6 capstone checkpoint" required>
+                        <label for="assignment-description">Brief</label>
+                        <textarea id="assignment-description" name="description" rows="4" placeholder="What should learners submit?" required></textarea>
+                        <label for="assignment-resource-link">Coursework resource link</label>
+                        <input id="assignment-resource-link" name="resource_link" type="url" placeholder="Paste coursework resource link">
+                        <label for="assignment-due-at">Due date and time</label>
+                        <input id="assignment-due-at" name="due_at" type="datetime-local" required>
+                        <button type="submit" class="btn btn-primary">Create coursework</button>
+                    </form>
+                </details>
+
+                <details class="portal-nested-disclosure">
+                    <summary>Attendance tracker</summary>
+                    <form class="dashboard-form" action="{{ url_for('save_attendance', slug=classroom.slug) }}" method="post">
+                        {{ csrf_field() }}
+                        <label for="attendance-title">Session title</label>
+                        <input id="attendance-title" name="title" type="text" placeholder="Week 4 live class" required>
+                        <label for="attendance-date">Session date</label>
+                        <input id="attendance-date" name="session_date" type="date" required>
+                        {% for learner in classroom.learners %}
+                        <label for="attendance-status-{{ learner.id }}">{{ learner.name }}</label>
+                        <select id="attendance-status-{{ learner.id }}" name="attendance_status_{{ learner.id }}">
+                            <option value="present">Present</option>
+                            <option value="late">Late</option>
+                            <option value="absent">Absent</option>
+                        </select>
+                        <input name="attendance_notes_{{ learner.id }}" type="text" placeholder="Optional note for {{ learner.name }}">
+                        {% endfor %}
+                        <button type="submit" class="btn btn-primary">Save attendance</button>
+                    </form>
+                </details>
+
+                <details class="portal-nested-disclosure">
+                    <summary>Add course material</summary>
+                    <form class="dashboard-form" action="{{ url_for('upload_material', slug=classroom.slug) }}" method="post">
+                        {{ csrf_field() }}
+                        <label for="material-title">Title</label>
+                        <input id="material-title" name="title" type="text" placeholder="Week 5 slide deck">
+                        <label for="material-url">Material link</label>
+                        <input id="material-url" name="material_url" type="url" placeholder="Paste material link" required>
+                        <label for="material-description">Description</label>
+                        <textarea id="material-description" name="description" rows="4" placeholder="Explain what learners should use this material for"></textarea>
+                        <button type="submit" class="btn btn-primary">Add material link</button>
+                    </form>
+                </details>
+
+                <details class="portal-nested-disclosure">
+                    <summary>Post to class</summary>
+                    <form class="dashboard-form" action="{{ url_for('post_announcement', slug=classroom.slug) }}" method="post">
+                        {{ csrf_field() }}
+                        <label for="kind">Post type</label>
+                        <select id="kind" name="kind">
+                            <option value="announcement">Announcement</option>
+                            <option value="resource">Resource</option>
+                            <option value="assignment">Assignment post</option>
+                            <option value="challenge">Challenge post</option>
+                            <option value="project">Project post</option>
+                            <option value="quiz">Quiz post</option>
+                        </select>
+                        <label for="title">Title</label>
+                        <input id="title" name="title" type="text" placeholder="Share an update" required>
+                        <label for="body">Message</label>
+                        <textarea id="body" name="body" rows="5" placeholder="Add guidance, links, or class reminders" required></textarea>
+                        <label for="post-resource-link">Post link</label>
+                        <input id="post-resource-link" name="resource_link" type="url" placeholder="Paste class post link">
+                        <button type="submit" class="btn btn-primary">Post update</button>
+                    </form>
+                </details>
+            </details>
+
+            {% endif %}
+        </aside>
+
+        <div class="lms-main">
+            <section class="lms-panel reveal portal-tab-panel" id="live-training-sessions">
+                <div class="lms-panel-heading">
+                    <div>
+                        <p class="kicker">Live training hub</p>
+                        <h2>Scheduled live sessions & recordings</h2>
+                    </div>
+                    <div>
+                        <form class="inline-form" action="{{ url_for('sync_classroom_meetings', slug=classroom.slug) }}" method="post">
+                            {{ csrf_field() }}
+                            <button type="submit" class="btn btn-secondary btn-sm icon-btn">
+                                <svg class="icon-inline" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                                Sync recordings
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div class="dashboard-grid">
+                    {% for session in classroom.live_sessions %}
+                    <article class="dashboard-card lms-meeting-card {% if session.is_live %}lms-meeting-live{% endif %}">
+                        <div class="lms-meeting-badge-wrap">
+                            {% if session.is_live %}
+                            <span class="lms-status-pill lms-status-live">LIVE NOW</span>
+                            {% elif session.is_completed %}
+                            <span class="lms-status-pill lms-status-completed">Completed</span>
+                            {% else %}
+                            <span class="lms-status-pill lms-status-upcoming">Upcoming</span>
+                            {% endif %}
+                        </div>
+                        <h3>{{ session.topic }}</h3>
+                        {% if session.agenda %}
+                        <p class="lms-meeting-agenda">{{ session.agenda|linkify("Open session link") }}</p>
+                        {% endif %}
+                        
+                        <div class="lms-meeting-info">
+                            <p><strong>Starts:</strong> {{ session.start_time_formatted }}</p>
+                            <p><strong>Duration:</strong> {{ session.duration }} minutes</p>
+                        </div>
+
+                        <div class="lms-meeting-actions">
+                            {% if current_user.role in ["mentor", "admin"] %}
+                                {% if not session.is_completed %}
+                                <a href="{{ session.start_link }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary lms-action-btn">Start meeting as host</a>
+                                {% endif %}
+                                <form class="inline-form full-width" action="{{ url_for('delete_classroom_meeting', slug=classroom.slug, session_id=session.id) }}" method="post" data-confirm="Are you sure you want to delete this live session?">
+                                    {{ csrf_field() }}
+                                    <button type="submit" class="btn btn-danger full-width">Delete session</button>
+                                </form>
+                            {% else %}
+                                {% if not session.is_completed %}
+                                <a href="{{ session.join_link }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary lms-action-btn {% if session.is_live %}btn-pulse{% endif %}">Join live session</a>
+                                {% endif %}
+                            {% endif %}
+
+                            {% if session.recording_status == 'available' %}
+                            <div class="lms-recording-section">
+                                <a href="{{ session.recording_play_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary recording-action">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                                    Watch
+                                </a>
+                                <a href="{{ session.recording_download_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-tertiary recording-action">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                    Download
+                                </a>
+                            </div>
+                            {% elif session.is_completed %}
+                            <div class="lms-recording-pending">
+                                <span class="recording-processing-badge">
+                                    <svg class="spinner icon-inline" width="16" height="16" viewBox="0 0 50 50">
+                                        <circle class="path spinner-path" cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5"></circle>
+                                    </svg>
+                                    Recording processing...
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </article>
+                    {% else %}
+                    <article class="dashboard-card">
+                        <h3>No live sessions scheduled</h3>
+                        <p>Live session links and recordings will appear here as they are scheduled by your mentor.</p>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="lms-panel reveal portal-tab-panel active" id="class-materials">
+                <div class="lms-panel-heading">
+                    <div>
+                        <p class="kicker">Class materials</p>
+                        <h2>Downloads for this classroom</h2>
+                    </div>
+                </div>
+                <div class="dashboard-grid">
+                    {% for material in classroom.materials %}
+                    <article class="dashboard-card">
+                        <h3>{{ material.title }}</h3>
+                        {% if material.description %}
+                        <p>{{ material.description|linkify }}</p>
+                        {% endif %}
+                        <p class="lms-stream-meta">Uploaded {{ material.uploaded_label }} by {{ material.uploader_name }}</p>
+                        <a class="btn btn-secondary lms-file-link" href="{{ url_for('download_material', material_id=material.id) }}" {% if material.material_url %}target="_blank" rel="noopener noreferrer"{% endif %}>
+                            {% if material.material_url %}Open material{% else %}Download <span class="lms-file-name">{{ material.original_name }}</span>{% endif %}
+                        </a>
+                        {% if current_user.role in ["mentor", "admin"] %}
+                        <form class="dashboard-form" action="{{ url_for('update_material', slug=classroom.slug, material_id=material.id) }}" method="post">
+                            {{ csrf_field() }}
+                            <label for="material-title-{{ material.id }}">Edit title</label>
+                            <input id="material-title-{{ material.id }}" name="title" type="text" value="{{ material.title }}" required>
+                            <label for="material-url-{{ material.id }}">Replace material link</label>
+                            <input id="material-url-{{ material.id }}" name="material_url" type="url" placeholder="Paste a new material link">
+                            <label for="material-description-{{ material.id }}">Edit description</label>
+                            <textarea id="material-description-{{ material.id }}" name="description" rows="3">{{ material.description }}</textarea>
+                            <button type="submit" class="btn btn-primary">Update material</button>
+                        </form>
+                        <form class="dashboard-form" action="{{ url_for('delete_material', slug=classroom.slug, material_id=material.id) }}" method="post">
+                            {{ csrf_field() }}
+                            <button type="submit" class="btn btn-danger">Delete material</button>
+                        </form>
+                        {% endif %}
+                    </article>
+                    {% else %}
+                    <article class="dashboard-card">
+                        <h3>No materials yet</h3>
+                        <p>Course links will appear here once the mentor adds them.</p>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="lms-panel reveal portal-tab-panel" id="class-stream">
+                <div class="lms-panel-heading">
+                    <div>
+                        <p class="kicker">Class stream</p>
+                        <h2>Class posts</h2>
+                    </div>
+                </div>
+                <div class="lms-stream">
+                    {% for item in classroom.announcements %}
+                    <article class="lms-stream-card">
+                        <span class="lms-status-pill">{{ item.kind }}</span>
+                        <h3>{{ item.title }}</h3>
+                        <p class="lms-stream-meta">{{ item.posted_label }}</p>
+                        <p>{{ item.body|linkify("Click to access challenge" if item.kind == "challenge" else "Open shared link") }}</p>
+                        {% if current_user.role in ["mentor", "admin"] %}
+                        <form class="dashboard-form" action="{{ url_for('update_announcement', slug=classroom.slug, announcement_id=item.id) }}" method="post">
+                            {{ csrf_field() }}
+                            <label for="announcement-title-{{ item.id }}">Title</label>
+                            <input id="announcement-title-{{ item.id }}" name="title" type="text" value="{{ item.title }}" required>
+                            <label for="announcement-body-{{ item.id }}">Message</label>
+                            <textarea id="announcement-body-{{ item.id }}" name="body" rows="3" required>{{ item.body }}</textarea>
+                            <label for="announcement-kind-{{ item.id }}">Type</label>
+                            <select id="announcement-kind-{{ item.id }}" name="kind">
+                                <option value="announcement" {% if item.kind == 'announcement' %}selected{% endif %}>Announcement</option>
+                                <option value="resource" {% if item.kind == 'resource' %}selected{% endif %}>Resource</option>
+                                <option value="assignment" {% if item.kind == 'assignment' %}selected{% endif %}>Assignment post</option>
+                                    <option value="challenge" {% if item.kind == 'challenge' %}selected{% endif %}>Challenge post</option>
+                                    <option value="project" {% if item.kind == 'project' %}selected{% endif %}>Project post</option>
+                                    <option value="quiz" {% if item.kind == 'quiz' %}selected{% endif %}>Quiz post</option>
+                            </select>
+                            <button type="submit" class="btn btn-primary">Update post</button>
+                        </form>
+                        <form class="dashboard-form" action="{{ url_for('delete_announcement', slug=classroom.slug, announcement_id=item.id) }}" method="post">
+                            {{ csrf_field() }}
+                            <button type="submit" class="btn btn-danger">Delete post</button>
+                        </form>
+                        {% endif %}
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="lms-panel reveal portal-tab-panel" id="coursework">
+                <div class="lms-panel-heading">
+                    <div>
+                        <p class="kicker">Coursework</p>
+                        <h2>Modules and assignments</h2>
+                    </div>
+                </div>
+                <div class="lms-coursework-grid">
+                    <div class="lms-stack">
+                        {% for module in classroom.modules %}
+                        <article class="lms-module-card">
+                            <div class="lms-module-head">
+                                <h3>{{ module.title }}</h3>
+                                <span class="lms-status-pill">{{ module.status }}</span>
+                            </div>
+                            <p>{{ module.summary }}</p>
+                            <ul class="lms-bullet-list">
+                                {% for item in module["items"] %}
+                                <li>{{ item|linkify("Open module resource") }}</li>
+                                {% endfor %}
+                            </ul>
+                            {% if current_user.role in ["mentor", "admin"] %}
+                            <form class="dashboard-form" action="{{ url_for('update_module', slug=classroom.slug, module_id=module.id) }}" method="post">
+                                {{ csrf_field() }}
+                                <label for="module-title-{{ module.id }}">Title</label>
+                                <input id="module-title-{{ module.id }}" name="title" type="text" value="{{ module.title }}" required>
+                                <label for="module-status-{{ module.id }}">Status</label>
+                                <select id="module-status-{{ module.id }}" name="status">
+                                    <option value="In Progress" {% if module.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                    <option value="Next Up" {% if module.status == 'Next Up' %}selected{% endif %}>Next Up</option>
+                                    <option value="Opening Soon" {% if module.status == 'Opening Soon' %}selected{% endif %}>Opening Soon</option>
+                                    <option value="Completed" {% if module.status == 'Completed' %}selected{% endif %}>Completed</option>
+                                </select>
+                                <label for="module-summary-{{ module.id }}">Summary</label>
+                                <textarea id="module-summary-{{ module.id }}" name="summary" rows="3" required>{{ module.summary }}</textarea>
+                                <label for="module-items-{{ module.id }}">Module items</label>
+                                <textarea id="module-items-{{ module.id }}" name="items" rows="4">{{ module["items"] | join('\n') }}</textarea>
+                                <button type="submit" class="btn btn-primary">Update module</button>
+                            </form>
+                            <form class="dashboard-form" action="{{ url_for('delete_module', slug=classroom.slug, module_id=module.id) }}" method="post">
+                                {{ csrf_field() }}
+                                <button type="submit" class="btn btn-danger">Delete module</button>
+                            </form>
+                            {% endif %}
+                        </article>
+                        {% endfor %}
+                    </div>
+
+                    <div class="lms-stack">
+                        {% for assignment in classroom.assignments %}
+                        <article class="lms-assignment-card">
+                            <span class="lms-status-pill">{{ assignment.assignment_type_label }}</span>
+                            <h3>{{ assignment.title }}</h3>
+                            <p>{{ assignment.description|linkify("Click to access challenge" if assignment.assignment_type == "challenge" else "Open shared link") }}</p>
+                            <p class="lms-stream-meta">Due {{ assignment.due_label }}</p>
+                            {% if current_user.role == "student" %}
+                            <p class="lms-stream-meta">
+                                Status:
+                                {{ assignment.submission_status or "not submitted" }}
+                                {% if assignment.submitted_label %}
+                                &bull; Submitted {{ assignment.submitted_label }}
+                                {% endif %}
+                            </p>
+                            {% if assignment.grade %}
+                            <p><strong>Grade:</strong> {{ assignment.grade }}</p>
+                            {% endif %}
+                            {% if assignment.feedback %}
+                            <p><strong>Feedback:</strong> {{ assignment.feedback|linkify }}</p>
+                            {% endif %}
+                            {% if assignment.submission_content %}
+                            <a class="btn btn-secondary lms-file-link" href="{{ assignment.submission_content }}" target="_blank" rel="noopener noreferrer">Open submitted work</a>
+                            {% endif %}
+                            {% if assignment.submission_locked %}
+                            <p class="lms-stream-meta">This submission is locked after grading. Your mentor must allow resubmission before you can submit again.</p>
+                            {% elif assignment.resubmission_allowed %}
+                            <p class="lms-stream-meta">Resubmission has been opened by your mentor.</p>
+                            {% endif %}
+                            {% if not assignment.submission_locked %}
+                            <form class="dashboard-form" action="{{ url_for('submit_assignment', slug=classroom.slug, assignment_id=assignment.id) }}" method="post">
+                                {{ csrf_field() }}
+                                <label for="assignment-{{ assignment.id }}">Submission link</label>
+                                <input id="assignment-{{ assignment.id }}" name="content" type="url" placeholder="Paste your submission link" required>
+                                <button type="submit" class="btn btn-primary">Submit assignment</button>
+                            </form>
+                            {% endif %}
+                            {% else %}
+                            <p><strong>Submissions received:</strong> {{ assignment.submission_count }}</p>
+                            {% if current_user.role in ["mentor", "admin"] %}
+                            <form class="dashboard-form" action="{{ url_for('admin_update_assignment', slug=classroom.slug, assignment_id=assignment.id) }}" method="post">
+                                {{ csrf_field() }}
+                                <label for="edit-assignment-title-{{ assignment.id }}">Title</label>
+                                <input id="edit-assignment-title-{{ assignment.id }}" name="title" type="text" value="{{ assignment.title }}" required>
+                                <label for="edit-assignment-description-{{ assignment.id }}">Description</label>
+                                <textarea id="edit-assignment-description-{{ assignment.id }}" name="description" rows="3" required>{{ assignment.description }}</textarea>
+                                <label for="edit-assignment-type-{{ assignment.id }}">Type</label>
+                                <select id="edit-assignment-type-{{ assignment.id }}" name="assignment_type">
+                                    <option value="challenge" {% if assignment.assignment_type == 'challenge' %}selected{% endif %}>Class challenge</option>
+                                    <option value="assignment" {% if assignment.assignment_type == 'assignment' %}selected{% endif %}>Class assignment</option>
+                                    <option value="project" {% if assignment.assignment_type == 'project' %}selected{% endif %}>Project</option>
+                                    <option value="quiz" {% if assignment.assignment_type == 'quiz' %}selected{% endif %}>Quiz</option>
+                                </select>
+                                <label for="edit-assignment-due_at-{{ assignment.id }}">Due date</label>
+                                <input id="edit-assignment-due_at-{{ assignment.id }}" name="due_at" type="datetime-local" value="{{ assignment.due_input_value }}" required>
+                                <button type="submit" class="btn btn-primary">Update coursework</button>
+                            </form>
+                            <form class="dashboard-form" action="{{ url_for('admin_delete_assignment', slug=classroom.slug, assignment_id=assignment.id) }}" method="post">
+                                {{ csrf_field() }}
+                                <button type="submit" class="btn btn-danger">Delete coursework</button>
+                            </form>
+                            {% endif %}
+                            {% endif %}
+                        </article>
+                        {% endfor %}
+                    </div>
+                </div>
+            </section>
+
+            <section class="lms-panel reveal portal-tab-panel" id="project">
+                <div class="lms-panel-heading">
+                    <div>
+                        <p class="kicker">Learner project</p>
+                        <h2>Final project workspace</h2>
+                    </div>
+                    {% if current_user.role == "student" %}
+                    <span class="lms-status-pill">{{ "Active" if classroom.project_unlocked else "Activates at 95% progress" }}</span>
+                    {% endif %}
+                </div>
+
+                {% if current_user.role == "student" %}
+                <article class="lms-project-status-card">
+                    <div>
+                        <p class="kicker">Project readiness</p>
+                        <h3>
+                            {% if classroom.project_unlocked %}
+                            Your project is active.
+                            {% else %}
+                            Project becomes active at 95% class progress.
+                            {% endif %}
+                        </h3>
+                        <p>
+                            {% if classroom.project_unlocked %}
+                            Submit your mentor-approved project below. You can still suggest a stronger project idea if you want to personalize your portfolio.
+                            {% else %}
+                            You are currently at {{ classroom.progress }}%. Complete {{ classroom.project_unlock_remaining }}% more progress to activate the final project submission.
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="lms-project-meter" aria-label="Project unlock progress">
+                        <strong>{{ classroom.progress }}%</strong>
+                        <span><i style="width: {{ classroom.progress }}%"></i></span>
+                    </div>
+                </article>
+                {% endif %}
+
+                <div class="lms-coursework-grid">
+                    <div class="lms-stack">
+                        <article class="lms-assignment-card lms-project-suggestion-card">
+                            <span class="lms-status-pill">Learner suggestion</span>
+                            <h3>Suggest a project</h3>
+                            <p>Learners can propose a practical project for mentor review before the final project becomes active.</p>
+                            {% if current_user.role == "student" %}
+                            <form class="dashboard-form" action="{{ url_for('suggest_project', slug=classroom.slug) }}" method="post">
+                                {{ csrf_field() }}
+                                <label for="project-title">Project title</label>
+                                <input id="project-title" name="project_title" type="text" placeholder="e.g. Customer churn analysis dashboard" required>
+                                <label for="project-description">Project idea</label>
+                                <textarea id="project-description" name="project_description" rows="5" placeholder="Describe the business problem, dataset, tools, and expected output." required></textarea>
+                                <button type="submit" class="btn btn-primary">Send project suggestion</button>
+                            </form>
+                            {% endif %}
+                        </article>
+
+                        {% for suggestion in classroom.project_suggestions %}
+                        <article class="lms-assignment-card">
+                            <span class="lms-status-pill">{{ suggestion.status|title }}</span>
+                            <h3>{{ suggestion.title }}</h3>
+                            <p>{{ suggestion.description|linkify("Open project reference") }}</p>
+                            <p class="lms-stream-meta">
+                                Suggested by {{ suggestion.student_name }} &bull; {{ suggestion.submitted_label }}
+                            </p>
+                            {% if suggestion.mentor_note %}
+                            <p><strong>Mentor note:</strong> {{ suggestion.mentor_note|linkify("Open mentor reference") }}</p>
+                            {% endif %}
+                        </article>
+                        {% else %}
+                        <article class="lms-assignment-card">
+                            <h3>No project suggestions yet</h3>
+                            <p>Suggested project ideas will appear here for review and discussion.</p>
+                        </article>
+                        {% endfor %}
+                    </div>
+
+                    <div class="lms-stack">
+                        {% for assignment in classroom.project_assignments %}
+                        <article class="lms-assignment-card lms-project-card">
+                            <span class="lms-status-pill">{{ assignment.assignment_type_label }}</span>
+                            <h3>{{ assignment.title }}</h3>
+                            <p>{{ assignment.description|linkify("Open shared link") }}</p>
+                            <p class="lms-stream-meta">Due {{ assignment.due_label }}</p>
+                            {% if current_user.role == "student" %}
+                            {% if not classroom.project_unlocked %}
+                            <p class="lms-stream-meta">Submission opens when your class progress reaches 95%.</p>
+                            <button class="btn btn-secondary" type="button" disabled>Project locked</button>
+                            {% else %}
+                            <p class="lms-stream-meta">
+                                Status:
+                                {{ assignment.submission_status or "not submitted" }}
+                                {% if assignment.submitted_label %}
+                                &bull; Submitted {{ assignment.submitted_label }}
+                                {% endif %}
+                            </p>
+                            {% if assignment.grade %}
+                            <p><strong>Grade:</strong> {{ assignment.grade }}</p>
+                            {% endif %}
+                            {% if assignment.feedback %}
+                            <p><strong>Feedback:</strong> {{ assignment.feedback|linkify }}</p>
+                            {% endif %}
+                            {% if assignment.submission_content %}
+                            <a class="btn btn-secondary lms-file-link" href="{{ assignment.submission_content }}" target="_blank" rel="noopener noreferrer">Open submitted project</a>
+                            {% endif %}
+                            {% if assignment.submission_locked %}
+                            <p class="lms-stream-meta">This project is locked after grading. Your mentor must allow resubmission before you can submit again.</p>
+                            {% elif assignment.resubmission_allowed %}
+                            <p class="lms-stream-meta">Resubmission has been opened by your mentor.</p>
+                            {% endif %}
+                            {% if not assignment.submission_locked %}
+                            <form class="dashboard-form" action="{{ url_for('submit_assignment', slug=classroom.slug, assignment_id=assignment.id) }}" method="post">
+                                {{ csrf_field() }}
+                                <label for="project-assignment-{{ assignment.id }}">Project submission link</label>
+                                <input id="project-assignment-{{ assignment.id }}" name="content" type="url" placeholder="Paste your project link" required>
+                                <button type="submit" class="btn btn-primary">Submit project</button>
+                            </form>
+                            {% endif %}
+                            {% endif %}
+                            {% else %}
+                            <p><strong>Submissions received:</strong> {{ assignment.submission_count }}</p>
+                            <form class="dashboard-form" action="{{ url_for('admin_update_assignment', slug=classroom.slug, assignment_id=assignment.id) }}" method="post">
+                                {{ csrf_field() }}
+                                <label for="edit-project-title-{{ assignment.id }}">Title</label>
+                                <input id="edit-project-title-{{ assignment.id }}" name="title" type="text" value="{{ assignment.title }}" required>
+                                <label for="edit-project-description-{{ assignment.id }}">Description</label>
+                                <textarea id="edit-project-description-{{ assignment.id }}" name="description" rows="3" required>{{ assignment.description }}</textarea>
+                                <input name="assignment_type" type="hidden" value="project">
+                                <label for="edit-project-due_at-{{ assignment.id }}">Due date</label>
+                                <input id="edit-project-due_at-{{ assignment.id }}" name="due_at" type="datetime-local" value="{{ assignment.due_input_value }}" required>
+                                <button type="submit" class="btn btn-primary">Update project</button>
+                            </form>
+                            <form class="dashboard-form" action="{{ url_for('admin_delete_assignment', slug=classroom.slug, assignment_id=assignment.id) }}" method="post">
+                                {{ csrf_field() }}
+                                <button type="submit" class="btn btn-danger">Delete project</button>
+                            </form>
+                            {% endif %}
+                        </article>
+                        {% else %}
+                        <article class="lms-assignment-card lms-project-card">
+                            <h3>No final project has been published yet</h3>
+                            <p>Once the mentor adds a project, it will appear here. Learners can still suggest a project idea for review.</p>
+                        </article>
+                        {% endfor %}
+                    </div>
+                </div>
+            </section>
+
+            <section class="lms-panel reveal portal-tab-panel" id="certificate">
+                <div class="lms-panel-heading">
+                    <div>
+                        <p class="kicker">Certificate</p>
+                        <h2>Completion certificate</h2>
+                    </div>
+                    {% if current_user.role == "student" %}
+                    <span class="lms-status-pill">{{ "Ready" if classroom.certificate_unlocked else "Locked" }}</span>
+                    {% endif %}
+                </div>
+                <div class="dashboard-grid certificate-dashboard-grid">
+                    <article class="dashboard-card certificate-specimen-card">
+                        <div class="certificate-preview" aria-label="Certificate preview">
+                            <span class="certificate-watermark">{{ "Verified" if classroom.certificate_unlocked else "Sample" }}</span>
+                            <div class="certificate-preview-top">
+                                <img src="{{ url_for('static', filename='images/tektutors-logo.svg') }}" alt="Tektutors">
+                                <span>ID: {{ "Available" if classroom.certificate_unlocked else "Pending" }}</span>
+                            </div>
+                            <p class="certificate-preview-kicker">Certificate of Completion</p>
+                            <p class="certificate-preview-title">Professional Credential</p>
+                            <h3>{{ current_user.name }}</h3>
+                            <p>has successfully completed the required live sessions, coursework, and project assessment for</p>
+                            <strong>{{ classroom.title }}</strong>
+                            <div class="certificate-preview-meta">
+                                <span>{{ "Project passed" if classroom.project_passed else "Project pending" }}</span>
+                                <span>{{ "Attendance complete" if classroom.progress >= 100 else classroom.progress ~ "% progress" }}</span>
+                                <span>Tektutors Learning Hub</span>
+                                <span>{{ classroom.course_duration }}</span>
+                            </div>
+                            <div class="certificate-preview-footer">
+                                <span class="certificate-preview-signature">Tektutors</span>
+                                <span class="certificate-preview-stamp">Verified</span>
+                                <span class="certificate-preview-qr" aria-hidden="true"></span>
+                            </div>
+                        </div>
+                    </article>
+                    <article class="dashboard-card">
+                        <p class="kicker">Download</p>
+                        {% if current_user.role == "student" %}
+                            <h3>Unlocks after 100% progress and a passed project</h3>
+                            {% if classroom.certificate_unlocked %}
+                            <p>Your certificate is ready for this classroom.</p>
+                            <a class="btn btn-primary" href="{{ url_for('download_student_certificate', slug=classroom.slug) }}">Download certificate</a>
+                            {% else %}
+                            <p>Keep attending class sessions and submit your project. The download button becomes available once your progress reaches 100% and your project is passed.</p>
+                            <button class="btn btn-secondary" type="button" disabled>Certificate locked</button>
+                            {% endif %}
+                        {% else %}
+                            <h3>Learner certificate requirements</h3>
+                            <p>Learners can download their certificate from this classroom after reaching 100% progress and passing the final project.</p>
+                        {% endif %}
+                    </article>
+                </div>
+            </section>
+            <section class="lms-panel reveal portal-tab-panel" id="scores">
+                <div class="lms-panel-heading">
+                    <div>
+                        <p class="kicker">Scores</p>
+                        <h2>Score tabulation</h2>
+                    </div>
+                </div>
+                <div class="lms-table-wrap">
+                    <table class="lms-table">
+                        <thead>
+                            <tr>
+                                {% if current_user.role in ["mentor", "admin"] %}
+                                <th>Learner</th>
+                                {% endif %}
+                                <th>Coursework</th>
+                                <th>Type</th>
+                                <th>Score</th>
+                                <th>Submission status</th>
+                                <th>Timing</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in classroom.score_tabulation %}
+                            <tr>
+                                {% if current_user.role in ["mentor", "admin"] %}
+                                <td data-label="Learner">{{ item.student_name }}</td>
+                                {% endif %}
+                                <td data-label="Coursework">
+                                    <strong>{{ item.assignment_title or item.title }}</strong>
+                                    <div class="lms-table-meta">Due {{ item.due_label }}</div>
+                                </td>
+                                <td data-label="Type">{{ item.assignment_type_label }}</td>
+                                <td data-label="Score">{{ item.score_display }}</td>
+                                <td data-label="Submission status">{{ item.submission_status }}</td>
+                                <td data-label="Timing">{{ item.timing_status }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="{% if current_user.role in ['mentor', 'admin'] %}6{% else %}5{% endif %}">No coursework records yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="lms-panel reveal portal-tab-panel" id="attendance">
+                <div class="lms-panel-heading">
+                    <div>
+                        <p class="kicker">Attendance</p>
+                        <h2>Attendance tracker</h2>
+                    </div>
+                </div>
+                <div class="lms-attendance-summary">
+                    <article class="lms-stat-card">
+                        <p>Sessions</p>
+                        <h2>{{ classroom.attendance_summary.total_sessions }}</h2>
+                    </article>
+                    <article class="lms-stat-card">
+                        <p>Present</p>
+                        <h2>{{ classroom.attendance_summary.present_count }}</h2>
+                    </article>
+                    <article class="lms-stat-card">
+                        <p>Late</p>
+                        <h2>{{ classroom.attendance_summary.late_count }}</h2>
+                    </article>
+                    <article class="lms-stat-card">
+                        <p>Absent</p>
+                        <h2>{{ classroom.attendance_summary.absent_count }}</h2>
+                    </article>
+                </div>
+                <div class="lms-table-wrap">
+                    <table class="lms-table">
+                        <thead>
+                            <tr>
+                                <th>Session</th>
+                                {% if current_user.role in ["mentor", "admin"] %}
+                                <th>Learner</th>
+                                {% endif %}
+                                <th>Status</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in classroom.attendance_history %}
+                            <tr>
+                                <td data-label="Session">
+                                    <strong>{{ item.title }}</strong>
+                                    <div class="lms-table-meta">{{ item.session_label }}</div>
+                                </td>
+                                {% if current_user.role in ["mentor", "admin"] %}
+                                <td data-label="Learner">{{ item.student_name }}</td>
+                                {% endif %}
+                                <td data-label="Status">{{ item.status }}</td>
+                                <td data-label="Notes">{{ item.notes|linkify("Open note link") if item.notes else "-" }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="{% if current_user.role in ['mentor', 'admin'] %}4{% else %}3{% endif %}">No attendance records yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if current_user.role in ["mentor", "admin"] and classroom.attendance_sessions %}
+                <div class="lms-session-list">
+                    {% for session in classroom.attendance_sessions[:6] %}
+                    <div class="dashboard-list-item">
+                        <strong>{{ session.title }}</strong>
+                        <p>{{ session.session_label }} • Present {{ session.present_count or 0 }} • Late {{ session.late_count or 0 }} • Absent {{ session.absent_count or 0 }}</p>
+                        <form class="dashboard-form" action="{{ url_for('update_attendance_session', slug=classroom.slug, session_id=session.id) }}" method="post">
+                            {{ csrf_field() }}
+                            <label for="attendance-title-{{ session.id }}">Session title</label>
+                            <input id="attendance-title-{{ session.id }}" name="title" type="text" value="{{ session.title }}" required>
+                            <label for="attendance-date-{{ session.id }}">Date</label>
+                            <input id="attendance-date-{{ session.id }}" name="session_date" type="date" value="{{ session.session_date }}" required>
+                            <button type="submit" class="btn btn-primary">Update session</button>
+                        </form>
+                        <form class="dashboard-form" action="{{ url_for('delete_attendance_session', slug=classroom.slug, session_id=session.id) }}" method="post">
+                            {{ csrf_field() }}
+                            <button type="submit" class="btn btn-danger">Delete session</button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </section>
+
+            {% if current_user.role in ["mentor", "admin"] %}
+            <section class="lms-panel reveal portal-tab-panel" id="learner-submissions">
+                <div class="lms-panel-heading">
+                    <div>
+                        <p class="kicker">Learner submissions</p>
+                        <h2>Review, grade, and give feedback</h2>
+                    </div>
+                </div>
+                <div class="dashboard-grid">
+                    {% for submission in classroom.mentor_submissions %}
+                    <article class="dashboard-card">
+                        <h3>{{ submission.assignment_title }}</h3>
+                        <p><strong>Learner:</strong> {{ submission.student_name }}</p>
+                        <p class="lms-stream-meta">Submitted {{ submission.submitted_label }}</p>
+                        <span class="lms-status-pill">{{ submission.status }}</span>
+                        {% if submission.content %}
+                        <a class="btn btn-secondary lms-file-link" href="{{ submission.content }}" target="_blank" rel="noopener noreferrer">Open learner submission</a>
+                        {% endif %}
+                        <form class="dashboard-form" action="{{ url_for('save_submission_feedback', slug=classroom.slug, submission_id=submission.id) }}" method="post">
+                            {{ csrf_field() }}
+                            <label for="status-{{ submission.id }}">Status</label>
+                            <select id="status-{{ submission.id }}" name="status">
+                                <option value="reviewed" {% if submission.status == "reviewed" %}selected{% endif %}>Reviewed</option>
+                                <option value="needs revision" {% if submission.status == "needs revision" %}selected{% endif %}>Needs revision</option>
+                                <option value="passed" {% if submission.status == "passed" %}selected{% endif %}>Passed</option>
+                                <option value="approved" {% if submission.status == "approved" %}selected{% endif %}>Approved</option>
+                            </select>
+                            <label for="grade-{{ submission.id }}">Grade</label>
+                            <input id="grade-{{ submission.id }}" name="grade" type="text" placeholder="A, B+, 85%" value="{{ submission.grade or '' }}">
+                            <label for="feedback-{{ submission.id }}">Feedback</label>
+                            <textarea id="feedback-{{ submission.id }}" name="feedback" rows="4" placeholder="Share what the learner did well and what to improve">{{ submission.feedback or '' }}</textarea>
+                            <label class="lms-checkbox-row" for="resubmission-{{ submission.id }}">
+                                <input id="resubmission-{{ submission.id }}" name="resubmission_allowed" type="checkbox" value="1" {% if submission.resubmission_allowed %}checked{% endif %}>
+                                <span>Allow learner to resubmit after this review</span>
+                            </label>
+                            <button type="submit" class="btn btn-primary">Save feedback</button>
+                        </form>
+                    </article>
+                    {% else %}
+                    <article class="dashboard-card">
+                        <h3>No submissions yet</h3>
+                        <p>Learner uploads will appear here as soon as learners start submitting work.</p>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

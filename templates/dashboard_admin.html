@@ -1,0 +1,485 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="section dashboard-section" data-portal-tabs>
+    <div class="container">
+        <div class="section-heading reveal">
+            <p class="kicker">Admin Dashboard</p>
+        </div>
+        {% if current_user.must_change_password %}
+        <article class="dashboard-card reveal">
+            <p class="kicker">Password reset available</p>
+            <h2>Your account is still using a temporary password.</h2>
+            <p>You can stay in the admin portal and switch to a personal password anytime from your account page.</p>
+            <a class="btn btn-secondary" href="{{ url_for('account_password') }}">Set a personal password</a>
+        </article>
+        {% endif %}
+        <div class="lms-stats admin-stats-strip reveal">
+            {% for stat in dashboard_data.stats %}
+            <article class="lms-stat-card admin-stat-card admin-stat-{{ stat.label|lower|replace(' ', '-') }}">
+                <p>{{ stat.label }}</p>
+                <h2>{{ stat.value }}</h2>
+            </article>
+            {% endfor %}
+        </div>
+        <nav class="portal-toolbar reveal" aria-label="Admin dashboard shortcuts">
+            <div class="portal-toolbar-inner">
+                <select data-jump-select aria-label="Choose admin workspace">
+                    <option value="">Choose workspace</option>
+                    <option value="#admin-classrooms">Classrooms</option>
+                    <option value="#admin-people">People</option>
+                    <option value="#admin-actions">Create / reset</option>
+                    <option value="#admin-feedback">Feedback</option>
+                    <option value="#admin-activity">Recent activity</option>
+                </select>
+                <div class="portal-toolbar-actions portal-tab-buttons" role="tablist" aria-label="Admin workspaces">
+                    <button class="portal-tab-btn active" type="button" data-tab-target="#admin-classrooms" role="tab" aria-selected="true">Classrooms</button>
+                    <button class="portal-tab-btn" type="button" data-tab-target="#admin-people" role="tab" aria-selected="false">People</button>
+                    <button class="portal-tab-btn" type="button" data-tab-target="#admin-actions" role="tab" aria-selected="false">Create / Reset</button>
+                    <button class="portal-tab-btn" type="button" data-tab-target="#admin-feedback" role="tab" aria-selected="false">Feedback</button>
+                    <button class="portal-tab-btn" type="button" data-tab-target="#admin-activity" role="tab" aria-selected="false">Activity</button>
+                </div>
+            </div>
+        </nav>
+    </div>
+</section>
+
+{% if generated_password %}
+<section class="section">
+    <div class="container">
+        <article class="dashboard-card reveal">
+            <p class="kicker">Latest login details</p>
+            <h2>{{ generated_password.name }}</h2>
+            <p><strong>Email:</strong> {{ generated_password.email }}</p>
+            <p><strong>Role:</strong> {{ "Learner" if generated_password.role == "student" else generated_password.role|title }}</p>
+            <p><strong>Temporary Password:</strong> {{ generated_password.password }}</p>
+            <p>Share these details securely if email delivery was not used.</p>
+        </article>
+    </div>
+</section>
+{% endif %}
+
+<section class="section dashboard-tab-panel portal-tab-panel" id="admin-actions">
+    <div class="container dashboard-grid">
+        <details class="dashboard-card portal-disclosure reveal">
+            <summary>Assign login details</summary>
+            <form class="dashboard-form" action="{{ url_for('admin_manage_user') }}" method="post">
+                {{ csrf_field() }}
+                <label for="user-name">Full name</label>
+                <input id="user-name" name="name" type="text" placeholder="Jane Doe" required>
+                <label for="user-email">Email</label>
+                <input id="user-email" name="email" type="email" placeholder="jane@example.com" required>
+                <label for="user-role">Role</label>
+                <select id="user-role" name="role">
+                    <option value="student">Learner</option>
+                    <option value="mentor">Mentor</option>
+                    <option value="admin">Admin</option>
+                </select>
+                <label for="user-password">Password</label>
+                <input id="user-password" name="password" type="text" placeholder="Leave blank to generate one">
+                <label for="send-email">Send login email</label>
+                <select id="send-email" name="send_email">
+                    <option value="no">No</option>
+                    <option value="yes">Yes</option>
+                </select>
+                <button type="submit" class="btn btn-primary">Save access</button>
+            </form>
+        </details>
+
+        <details class="dashboard-card portal-disclosure reveal">
+            <summary>Open a new cohort space</summary>
+            <form class="dashboard-form" action="{{ url_for('admin_create_classroom') }}" method="post">
+                {{ csrf_field() }}
+                <label for="class-title">Title</label>
+                <input id="class-title" name="title" type="text" placeholder="Business Intelligence Lab" required>
+                <label for="class-code">Classroom code</label>
+                <input id="class-code" name="code" type="text" placeholder="TT-BI-420" required>
+                <label for="class-slug">Slug</label>
+                <input id="class-slug" name="slug" type="text" placeholder="business-intelligence-lab" required>
+                <label for="class-cohort">Cohort</label>
+                <input id="class-cohort" name="cohort" type="text" placeholder="June 2026 Weekend Cohort" required>
+                <label for="class-schedule">Schedule</label>
+                <input id="class-schedule" name="schedule" type="text" placeholder="Tue and Thu at 7:00 PM WAT" required>
+                <label for="class-duration">Course duration</label>
+                <input id="class-duration" name="course_duration" type="text" placeholder="4 weeks" value="4 weeks" required>
+                <label for="class-start-date">Date started</label>
+                <input id="class-start-date" name="course_start_date" type="date" required>
+                <label for="class-theme">Theme</label>
+                <input id="class-theme" name="theme" type="text" placeholder="analytics">
+                <label for="class-sessions">Weekly live sessions</label>
+                <input id="class-sessions" name="live_sessions" type="number" min="0" value="0">
+                <label for="class-mentor">Assigned mentor</label>
+                <select id="class-mentor" name="mentor_id" required>
+                    <option value="">Select a mentor</option>
+                    {% for mentor in dashboard_data.mentors %}
+                    <option value="{{ mentor.id }}">{{ mentor.name }} - {{ mentor.email }}</option>
+                    {% endfor %}
+                </select>
+                <label for="class-description">Description</label>
+                <textarea id="class-description" name="description" rows="4" placeholder="What will learners achieve in this classroom?" required></textarea>
+                <button type="submit" class="btn btn-primary">Create classroom</button>
+            </form>
+        </details>
+    </div>
+</section>
+
+<section class="section dashboard-tab-panel portal-tab-panel" id="admin-feedback">
+    <div class="container">
+        <div class="section-heading reveal">
+            <p class="kicker">Course feedback</p>
+            <h2>Quality scores from learner checkpoints.</h2>
+        </div>
+        <div class="dashboard-grid admin-compact-grid">
+            {% for item in dashboard_data.feedback_summary %}
+            <article class="dashboard-card reveal">
+                <div class="lms-classroom-header">
+                    <span class="lms-classroom-code">{{ item.classroom_code }}</span>
+                    <span class="lms-status-pill">{{ item.response_count }} responses</span>
+                </div>
+                <h3>{{ item.classroom_title }}</h3>
+                <p><strong>Mentor:</strong> {{ item.mentor_name }}</p>
+                <div class="feedback-score">
+                    <span>{{ item.average_score }}%</span>
+                    <meter min="0" max="100" value="{{ item.average_score }}">{{ item.average_score }}%</meter>
+                </div>
+                <div class="feedback-score-list">
+                    <p><strong>Course experience:</strong> {{ item.course_experience_score }}%</p>
+                    <p><strong>Course content:</strong> {{ item.course_content_score }}%</p>
+                    <p><strong>Teaching methodology:</strong> {{ item.mentor_methodology_score }}%</p>
+                    <p><strong>Mentor experience:</strong> {{ item.mentor_experience_score }}%</p>
+                    <p><strong>Mentor knowledge:</strong> {{ item.mentor_knowledge_score }}%</p>
+                    <p><strong>Learning Hub ease:</strong> {{ item.lms_ease_score }}%</p>
+                </div>
+            </article>
+            {% else %}
+            <article class="dashboard-card reveal">
+                <h3>No course feedback yet</h3>
+                <p>Feedback scores will appear after learners reach attendance checkpoints 4 and 7.</p>
+            </article>
+            {% endfor %}
+        </div>
+
+        <div class="dashboard-grid admin-compact-grid feedback-response-grid">
+            {% for feedback in dashboard_data.recent_feedback %}
+            <article class="dashboard-card reveal">
+                <div class="lms-classroom-header">
+                    <span class="lms-status-pill">{{ feedback.score_percentage }}%</span>
+                    <span class="lms-classroom-code">Attendance {{ feedback.milestone }}</span>
+                </div>
+                <h3>{{ feedback.student_name }}</h3>
+                <p>{{ feedback.classroom_title }} | {{ feedback.submitted_label }}</p>
+                <p><strong>Best:</strong> {{ feedback.best_experience|linkify("Open feedback link") }}</p>
+                <p><strong>Worst:</strong> {{ feedback.worst_experience|linkify("Open feedback link") }}</p>
+                <p><strong>Suggestion:</strong> {{ feedback.improvement_suggestion|linkify("Open feedback link") }}</p>
+            </article>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="section dashboard-tab-panel portal-tab-panel active" id="admin-classrooms">
+    <div class="container">
+        <div class="section-heading reveal">
+            <p class="kicker">Classrooms</p>
+            <h2>Monitor every course space and assign learners.</h2>
+        </div>
+        <div class="admin-filter-bar reveal">
+            <label for="admin-classroom-filter">Search classrooms</label>
+            <input id="admin-classroom-filter" type="search" placeholder="Search by class, mentor, cohort, code" data-admin-filter="#admin-classrooms">
+        </div>
+        <div class="dashboard-grid admin-compact-grid">
+            {% for classroom in dashboard_data.classrooms %}
+            <article class="dashboard-card reveal" data-filter-card>
+                <div class="lms-classroom-header">
+                    <span class="lms-classroom-code">{{ classroom.code }}</span>
+                    <span class="lms-status-pill">{{ classroom.learner_count }} learners</span>
+                </div>
+                <h3>{{ classroom.title }}</h3>
+                <div class="program-meta">
+                    <span>{{ classroom.cohort }}</span>
+                    <span>{{ classroom.course_duration }}</span>
+                    <span>{{ classroom.schedule }}</span>
+                </div>
+                <dl class="admin-card-metrics">
+                    <div>
+                        <dt>Mentor</dt>
+                        <dd>{{ classroom.mentor_name }}</dd>
+                    </div>
+                    <div>
+                        <dt>Resources</dt>
+                        <dd>{{ classroom.material_count }}</dd>
+                    </div>
+                    <div>
+                        <dt>Challenges</dt>
+                        <dd>{{ classroom.assignment_count }}</dd>
+                    </div>
+                    <div>
+                        <dt>Progress</dt>
+                        <dd>{{ classroom.progress }}%</dd>
+                    </div>
+                </dl>
+                <p class="lms-stream-meta">{{ classroom.progress_label }}</p>
+                <details>
+                    <summary>Overview</summary>
+                    <p>{{ classroom.description|linkify("Open classroom link") }}</p>
+                    <p><strong>Submissions:</strong> {{ classroom.submission_count }}</p>
+                </details>
+                <details>
+                    <summary>Edit cohort and classroom details</summary>
+                    <form class="dashboard-form" action="{{ url_for('admin_update_classroom', slug=classroom.slug) }}" method="post">
+                        {{ csrf_field() }}
+                        <label for="edit-title-{{ classroom.id }}">Title</label>
+                        <input id="edit-title-{{ classroom.id }}" name="title" type="text" value="{{ classroom.title }}" required>
+                        <label for="edit-code-{{ classroom.id }}">Classroom code</label>
+                        <input id="edit-code-{{ classroom.id }}" name="code" type="text" value="{{ classroom.code }}" required>
+                        <label for="edit-cohort-{{ classroom.id }}">Cohort</label>
+                        <input id="edit-cohort-{{ classroom.id }}" name="cohort" type="text" value="{{ classroom.cohort }}" required>
+                        <label for="edit-schedule-{{ classroom.id }}">Schedule</label>
+                        <input id="edit-schedule-{{ classroom.id }}" name="schedule" type="text" value="{{ classroom.schedule }}" required>
+                        <label for="edit-duration-{{ classroom.id }}">Course duration</label>
+                        <input id="edit-duration-{{ classroom.id }}" name="course_duration" type="text" value="{{ classroom.course_duration or '4 weeks' }}" required>
+                        <label for="edit-start-date-{{ classroom.id }}">Date started</label>
+                        <input id="edit-start-date-{{ classroom.id }}" name="course_start_date" type="date" value="{{ classroom.course_start_date }}" required>
+                        <label for="edit-theme-{{ classroom.id }}">Theme</label>
+                        <input id="edit-theme-{{ classroom.id }}" name="theme" type="text" value="{{ classroom.theme or 'analytics' }}">
+                        <label for="edit-sessions-{{ classroom.id }}">Weekly live sessions</label>
+                        <input id="edit-sessions-{{ classroom.id }}" name="live_sessions" type="number" min="0" value="{{ classroom.live_sessions }}">
+                        <label for="edit-mentor-{{ classroom.id }}">Assigned mentor</label>
+                        <select id="edit-mentor-{{ classroom.id }}" name="mentor_id" required>
+                            <option value="">Select a mentor</option>
+                            {% for mentor in dashboard_data.mentors %}
+                            <option value="{{ mentor.id }}" {% if mentor.id == classroom.mentor_id %}selected{% endif %}>{{ mentor.name }} - {{ mentor.email }}</option>
+                            {% endfor %}
+                        </select>
+                        <label for="edit-description-{{ classroom.id }}">Description</label>
+                        <textarea id="edit-description-{{ classroom.id }}" name="description" rows="4" required>{{ classroom.description }}</textarea>
+                        <button type="submit" class="btn btn-primary">Save classroom details</button>
+                    </form>
+                </details>
+                <details>
+                    <summary>Manage learners</summary>
+                    <form class="dashboard-form" action="{{ url_for('admin_enroll_student', slug=classroom.slug) }}" method="post">
+                        {{ csrf_field() }}
+                        <label for="student-{{ classroom.id }}">Enroll learner</label>
+                        <select id="student-{{ classroom.id }}" name="student_id" required>
+                            <option value="">Select a learner</option>
+                            {% for student in dashboard_data.students %}
+                            <option value="{{ student.id }}">{{ student.name }} - {{ student.email }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-secondary">Add learner</button>
+                    </form>
+                    <details class="portal-nested-disclosure">
+                        <summary>Remove enrolled learners</summary>
+                        {% for learner in classroom.learners %}
+                        <form class="dashboard-form" action="{{ url_for('admin_remove_classroom_learner', slug=classroom.slug, student_id=learner.id) }}" method="post">
+                            {{ csrf_field() }}
+                            <p>{{ learner.name }} - {{ learner.email }}</p>
+                            <button type="submit" class="btn btn-secondary" data-confirm="Remove this learner from the classroom?">Remove learner</button>
+                        </form>
+                        {% else %}
+                        <p>No learners are enrolled in this classroom yet.</p>
+                        {% endfor %}
+                    </details>
+                </details>
+                <a class="btn-tertiary" href="{{ url_for('lms_classroom', slug=classroom.slug) }}"><span>Open classroom</span> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></a>
+            </article>
+            {% else %}
+            <article class="dashboard-card reveal">
+                <h3>No classrooms yet</h3>
+                <p>Create the first classroom to begin assigning mentors, learners, resources, and challenges.</p>
+            </article>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="section dashboard-tab-panel portal-tab-panel" id="admin-people">
+    <div class="container">
+        <div class="section-heading reveal">
+            <p class="kicker">People</p>
+            <h2>All Learning Hub users and account status.</h2>
+        </div>
+        <div class="admin-user-role-tabs reveal" role="group" aria-label="View users by role">
+            <button class="role-filter-btn role-filter-admin" type="button" data-role-filter-target="#admin-people" data-role-filter="admin" aria-pressed="false">Admins <span>{{ dashboard_data.role_counts.admin }}</span></button>
+            <button class="role-filter-btn role-filter-mentor" type="button" data-role-filter-target="#admin-people" data-role-filter="mentor" aria-pressed="false">Mentors <span>{{ dashboard_data.role_counts.mentor }}</span></button>
+            <button class="role-filter-btn role-filter-learner" type="button" data-role-filter-target="#admin-people" data-role-filter="student" aria-pressed="false">Learners <span>{{ dashboard_data.role_counts.student }}</span></button>
+        </div>
+        <div class="admin-filter-bar reveal">
+            <label for="admin-people-filter">Search people</label>
+            <input id="admin-people-filter" type="search" placeholder="Search by name, email, role, status" data-filter-target="#admin-people" data-admin-filter="#admin-people">
+        </div>
+        <div class="dashboard-grid admin-compact-grid">
+            {% for user in dashboard_data.users %}
+            <article class="dashboard-card reveal" data-filter-card data-user-role="{{ user.role }}">
+                <div class="lms-classroom-header">
+                    <span class="lms-status-pill">{{ "Learner" if user.role == "student" else user.role|title }}</span>
+                    <span class="lms-classroom-code">
+                        {% if user.role == "mentor" %}
+                        {{ user.assigned_classroom_count }} assigned classes
+                        {% else %}
+                        {{ user.classroom_count }} classes
+                        {% endif %}
+                    </span>
+                </div>
+                <h3>{{ user.name }}</h3>
+                <p>{{ user.email }}</p>
+                <dl class="admin-card-metrics">
+                    <div>
+                        <dt>Status</dt>
+                        <dd>{% if user.is_suspended %}Suspended{% else %}{{ "Approved" if user.is_approved else "Pending" }}{% endif %}</dd>
+                    </div>
+                    <div>
+                        <dt>Created</dt>
+                        <dd>{{ user.created_label }}</dd>
+                    </div>
+                    <div>
+                        <dt>Approved</dt>
+                        <dd>{{ user.approved_label }}</dd>
+                    </div>
+                </dl>
+                {% if user.is_suspended %}
+                <p><strong>Suspended:</strong> {{ user.suspended_label }}</p>
+                {% endif %}
+                <details>
+                    <summary>Edit user details</summary>
+                    <form class="dashboard-form" action="{{ url_for('admin_update_user', user_id=user.id) }}" method="post">
+                        {{ csrf_field() }}
+                        <label for="edit-user-name-{{ user.id }}">Full name</label>
+                        <input id="edit-user-name-{{ user.id }}" name="name" type="text" value="{{ user.name }}" required>
+                        <label for="edit-user-email-{{ user.id }}">Email</label>
+                        <input id="edit-user-email-{{ user.id }}" name="email" type="email" value="{{ user.email }}" required>
+                        <label for="edit-user-role-{{ user.id }}">Role</label>
+                        <select id="edit-user-role-{{ user.id }}" name="role">
+                            <option value="student" {% if user.role == 'student' %}selected{% endif %}>Learner</option>
+                            <option value="mentor" {% if user.role == 'mentor' %}selected{% endif %}>Mentor</option>
+                            <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary">Save user details</button>
+                    </form>
+                </details>
+                {% if user.role in ["student", "mentor"] %}
+                <details>
+                    <summary>{% if user.is_suspended %}Reactivate{% else %}Suspend{% endif %} {{ user.role }}</summary>
+                    <form class="dashboard-form" action="{{ url_for('admin_update_user_suspension', user_id=user.id) }}" method="post">
+                        {{ csrf_field() }}
+                        {% if user.is_suspended %}
+                        <input type="hidden" name="action" value="reactivate">
+                        <button type="submit" class="btn btn-primary">Reactivate account</button>
+                        {% else %}
+                        <input type="hidden" name="action" value="suspend">
+                        <button type="submit" class="btn btn-secondary" data-confirm="Suspend this account? The user will not be able to access the portal.">Suspend account</button>
+                        {% endif %}
+                    </form>
+                </details>
+                <details>
+                    <summary>Remove {{ user.role }}</summary>
+                    {% if user.role == "mentor" and user.assigned_classroom_count %}
+                    <p>Reassign this mentor's classrooms before removing the account.</p>
+                    {% else %}
+                    <form class="dashboard-form" action="{{ url_for('admin_delete_user', user_id=user.id) }}" method="post">
+                        {{ csrf_field() }}
+                        <button type="submit" class="btn btn-secondary" data-confirm="Remove this user from the Learning Hub? This cannot be undone.">Remove {{ user.role }}</button>
+                    </form>
+                    {% endif %}
+                </details>
+                {% endif %}
+            </article>
+            {% endfor %}
+            <article class="dashboard-card reveal admin-empty-state" data-filter-empty="#admin-people" hidden>
+                <h3>No matching users</h3>
+                <p>Adjust the role category or search term to view retained accounts.</p>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="section dashboard-tab-panel portal-tab-panel" id="admin-activity">
+    <div class="container">
+        <div class="section-heading reveal">
+            <p class="kicker">Recent Activity</p>
+            <h2>Latest learner submissions across the Learning Hub.</h2>
+        </div>
+        <div class="admin-filter-bar reveal">
+            <label for="admin-activity-filter">Search activity</label>
+            <input id="admin-activity-filter" type="search" placeholder="Search by learner, class, mentor, assignment" data-admin-filter="#admin-activity">
+        </div>
+        <div class="dashboard-grid admin-compact-grid">
+            {% for submission in dashboard_data.recent_submissions %}
+            <article class="dashboard-card reveal" data-filter-card>
+                <h3>{{ submission.assignment_title }}</h3>
+                <p>{{ submission.student_name }} in {{ submission.classroom_title }}</p>
+                <p><strong>Mentor:</strong> {{ submission.mentor_name }}</p>
+                <p class="lms-stream-meta">Submitted {{ submission.submitted_label }}</p>
+                <span class="lms-status-pill">{{ submission.status }}</span>
+                {% if submission.grade %}
+                <p><strong>Grade:</strong> {{ submission.grade }}</p>
+                {% endif %}
+                <a class="btn-tertiary" href="{{ url_for('lms_classroom', slug=submission.slug) }}"><span>Review classroom</span> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></a>
+            </article>
+            {% else %}
+            <article class="dashboard-card reveal">
+                <h3>No activity yet</h3>
+                <p>New learner submissions will appear here as classes start working.</p>
+            </article>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<script>
+(() => {
+    const peoplePanel = document.getElementById("admin-people");
+    if (!peoplePanel) {
+        return;
+    }
+
+    const searchInput = document.getElementById("admin-people-filter");
+    const roleButtons = Array.from(peoplePanel.querySelectorAll("[data-role-filter]"));
+    const userCards = Array.from(peoplePanel.querySelectorAll("[data-filter-card][data-user-role]"));
+    const emptyState = peoplePanel.querySelector("[data-filter-empty='#admin-people']");
+    let activeRole = "all";
+
+    const applyPeopleFilter = () => {
+        const query = (searchInput?.value || "").trim().toLowerCase();
+        let visibleCount = 0;
+
+        userCards.forEach((card) => {
+            const matchesRole = activeRole === "all" || card.dataset.userRole === activeRole;
+            const matchesSearch = !query || card.textContent.toLowerCase().includes(query);
+            const shouldShow = matchesRole && matchesSearch;
+            card.hidden = !shouldShow;
+            card.style.display = shouldShow ? "" : "none";
+            if (shouldShow) {
+                visibleCount += 1;
+            }
+        });
+
+        if (emptyState) {
+            emptyState.hidden = visibleCount > 0;
+            emptyState.style.display = visibleCount > 0 ? "none" : "";
+        }
+    };
+
+    roleButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            activeRole = button.dataset.roleFilter || "all";
+            roleButtons.forEach((peer) => {
+                const isActive = peer === button;
+                peer.classList.toggle("active", isActive);
+                peer.setAttribute("aria-pressed", String(isActive));
+            });
+            applyPeopleFilter();
+        });
+    });
+
+    if (searchInput) {
+        ["input", "search", "change", "keyup"].forEach((eventName) => {
+            searchInput.addEventListener(eventName, applyPeopleFilter);
+        });
+    }
+
+    applyPeopleFilter();
+})();
+</script>
+{% endblock %}

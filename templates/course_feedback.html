@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="section dashboard-section">
+    <div class="container feedback-shell">
+        <article class="dashboard-card feedback-card reveal">
+            <div class="lms-classroom-header">
+                <span class="lms-status-pill">Required checkpoint {{ pending_feedback.milestone }}</span>
+                <span class="lms-classroom-code">{{ pending_feedback.code }}</span>
+            </div>
+            <p class="kicker">Course Feedback</p>
+            <h1>Share quick feedback before continuing.</h1>
+            <p>
+                You have attended {{ pending_feedback.attendance_count }} class sessions in
+                <strong>{{ pending_feedback.title }}</strong>. This short form helps the admin team track course quality as a percentage score.
+            </p>
+            <form class="dashboard-form feedback-form" action="{{ url_for('submit_course_feedback') }}" method="post">
+                {{ csrf_field() }}
+                <div class="feedback-rating-grid">
+                    {% for field_name, label in rating_fields %}
+                    <label class="feedback-rating-field" for="{{ field_name }}">
+                        <span>{{ label }}</span>
+                        <select id="{{ field_name }}" name="{{ field_name }}" required>
+                            <option value="">Rate</option>
+                            <option value="5">5 - Excellent</option>
+                            <option value="4">4 - Good</option>
+                            <option value="3">3 - Fair</option>
+                            <option value="2">2 - Poor</option>
+                            <option value="1">1 - Very poor</option>
+                        </select>
+                    </label>
+                    {% endfor %}
+                </div>
+
+                <label for="worst-experience">Worst experience</label>
+                <textarea id="worst-experience" name="worst_experience" rows="2" maxlength="700" placeholder="What made learning harder?" required></textarea>
+
+                <label for="best-experience">Best experience</label>
+                <textarea id="best-experience" name="best_experience" rows="2" maxlength="700" placeholder="What helped you most?" required></textarea>
+
+                <label for="improvement-suggestion">Suggestion for course improvement</label>
+                <textarea id="improvement-suggestion" name="improvement_suggestion" rows="2" maxlength="700" placeholder="What should we improve next?" required></textarea>
+
+                <button type="submit" class="btn btn-primary">Submit feedback</button>
+            </form>
+        </article>
+    </div>
+</section>
+{% endblock %}

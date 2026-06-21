@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container page-hero-grid">
+        <div class="reveal">
+            <p class="kicker">Careers</p>
+            <h1>Join the Tektutors trainer team.</h1>
+            <p>
+                We are interested in experienced trainers who can teach practical data, analytics,
+                AI, and business technology skills with clarity and care.
+            </p>
+            <div class="hero-cta">
+                <a class="btn btn-primary" href="#careers-form">Apply as a trainer</a>
+            </div>
+        </div>
+        <div class="hero-visual reveal">
+            <img
+                src="{{ url_for('static', filename='images/premium_about_mentorship.png') }}"
+                alt="Tektutors mentor guiding a learner during a practical training session"
+                loading="lazy"
+                decoding="async"
+                width="1400"
+                height="1000"
+                class="hero-image"
+            >
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container contact-grid">
+        <aside class="contact-info reveal">
+            <h2>Trainer profile</h2>
+            <p>We review applications from trainers with strong subject knowledge, practical project experience, and a learner-first teaching style.</p>
+            <p>Attach your CV as a PDF, DOC, or DOCX file. Portfolio links, LinkedIn profiles, and sample project links are welcome.</p>
+            <p class="contact-note">Shortlisted applicants will be contacted for the next step.</p>
+        </aside>
+
+        <form id="careers-form" class="contact-form reveal" action="{{ url_for('careers') }}" method="post" enctype="multipart/form-data">
+            {{ csrf_field() }}
+            <h2>Trainer application</h2>
+            <p>Tell us what you teach and attach your CV for review.</p>
+
+            <label for="name">Full name</label>
+            <input id="name" name="name" type="text" placeholder="Your full name" required>
+
+            <label for="email">Email address</label>
+            <input id="email" name="email" type="email" placeholder="you@example.com" required>
+
+            <label for="phone">Phone number</label>
+            <input id="phone" name="phone" type="tel" placeholder="+234..." required>
+
+            <label for="training-area">Training area</label>
+            <select id="training-area" name="training_area" required>
+                <option value="">Select your main training area</option>
+                {% for program in programs %}
+                <option value="{{ program.name }}">{{ program.name }}</option>
+                {% endfor %}
+                <option value="Excel and Google Sheets">Excel and Google Sheets</option>
+                <option value="SQL and Databases">SQL and Databases</option>
+                <option value="Other">Other</option>
+            </select>
+
+            <label for="years-experience">Years of training experience</label>
+            <select id="years-experience" name="years_experience" required>
+                <option value="">Select experience</option>
+                <option value="Less than 1 year">Less than 1 year</option>
+                <option value="1-2 years">1-2 years</option>
+                <option value="3-5 years">3-5 years</option>
+                <option value="6-10 years">6-10 years</option>
+                <option value="More than 10 years">More than 10 years</option>
+            </select>
+
+            <label for="availability">Availability</label>
+            <select id="availability" name="availability" required>
+                <option value="">Select availability</option>
+                <option value="Weekdays">Weekdays</option>
+                <option value="Weekends">Weekends</option>
+                <option value="Evenings">Evenings</option>
+                <option value="Flexible">Flexible</option>
+            </select>
+
+            <label for="portfolio-url">Portfolio, LinkedIn, or sample work link</label>
+            <input id="portfolio-url" name="portfolio_url" type="url" placeholder="https://...">
+
+            <label for="cv">Attach CV</label>
+            <input id="cv" name="cv" type="file" accept=".pdf,.doc,.docx" required>
+
+            <label for="message">Brief note</label>
+            <textarea id="message" name="message" rows="5" placeholder="Tell us about your training style, tools you teach, or recent learner outcomes."></textarea>
+
+            <input type="hidden" name="form_started_at" value="{{ form_started_at }}">
+            <input type="text" name="company" tabindex="-1" autocomplete="off" class="honeypot" aria-hidden="true">
+            <input type="text" name="website" tabindex="-1" autocomplete="off" class="honeypot" aria-hidden="true">
+
+            <button type="submit" class="btn btn-primary">Submit application</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

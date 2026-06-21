@@ -6,35 +6,29 @@
     <div class="hero-bg-shape shape-two" data-parallax data-speed="0.06"></div>
     <div class="container hero-grid">
         <div class="hero-content reveal">
-            <p class="kicker">Premium Data Mentorship</p>
-            <h1>Learn Data Skills Your Way <span>On Your Schedule</span> With Real Mentors.</h1>
+            <p class="kicker">Premium data mentorship</p>
+            <h1>
+                <span class="hero-title-line">The Smartest Place to Start Your</span>
+                <span class="hero-title-accent">AI &amp; Data Journey.</span>
+            </h1>
             <p class="hero-subhead">
                 Stop learning in crowded classes that ignore your pace. Build real-world data confidence through
                 1-on-1 training tailored to your career goals and personal schedule, including night sessions.
             </p>
             <div class="hero-cta">
-                <a class="btn btn-primary" href="{{ url_for('contact') }}#contact-form">Start Your Learning Journey</a>
-                <a class="btn btn-secondary" href="{{ url_for('contact') }}#contact-form">Book a Free Consultation</a>
+                <a class="btn btn-primary" href="{{ url_for('contact') }}#contact-form">Start your learning journey</a>
+                <a class="btn btn-secondary" href="{{ url_for('lms') }}">Explore the Learning Hub</a>
             </div>
-            <div class="hero-metrics">
-                <article>
-                    <h3>1-on-1</h3>
-                    <p>Mentor sessions built around you.</p>
-                </article>
-                <article>
-                    <h3>Flexible</h3>
-                    <p>Weekday, weekend, and night classes.</p>
-                </article>
-                <article>
-                    <h3>Career-Focused</h3>
-                    <p>Portfolio projects tied to real work.</p>
-                </article>
-            </div>
+            <nav class="quick-access reveal" aria-label="Quick access">
+                <a href="{{ url_for('programs') }}">View programs</a>
+                <a href="{{ url_for('registration') }}">Register</a>
+                <a href="{{ url_for('login') }}">Sign in</a>
+            </nav>
         </div>
         <div class="hero-visual reveal">
             <img
-                src="{{ url_for('static', filename='images/hero-data-ops.svg') }}"
-                alt="Analytics mentorship dashboard for one-on-one data training"
+                src="{{ url_for('static', filename='images/hero_african_mentor.png') }}"
+                alt="A beautiful young African woman smiling brightly as she is being guided by an online mentor on her laptop"
                 loading="lazy"
                 decoding="async"
                 width="1600"
@@ -42,7 +36,7 @@
                 class="hero-image"
             >
             <div class="glass-card hero-overlay">
-                <p class="kicker">Mentor-Led Outcomes</p>
+                <p class="kicker">Mentor-led outcomes</p>
                 <h2>Structured roadmap. Flexible sessions. Measurable growth.</h2>
                 <p>Built for professionals who need world-class guidance without compromising work or family commitments.</p>
             </div>
@@ -50,7 +44,27 @@
     </div>
 </section>
 
-<section class="section">
+<section class="learner-proof-strip" aria-label="Tektutors learner experience highlights">
+    <div class="container learner-proof-grid reveal">
+        <article>
+            <span>01</span>
+            <strong>Personal roadmap</strong>
+            <p>Every learner gets a clear path matched to their current skill level and career target.</p>
+        </article>
+        <article>
+            <span>02</span>
+            <strong>Mentor accountability</strong>
+            <p>Progress checks, feedback, and live guidance keep momentum from fading after week one.</p>
+        </article>
+        <article>
+            <span>03</span>
+            <strong>Project confidence</strong>
+            <p>Assignments, resources, and classroom records stay organized inside the Learning Hub.</p>
+        </article>
+    </div>
+</section>
+
+<section class="section compact-section">
     <div class="container">
         <div class="section-heading reveal">
             <p class="kicker">Why Tektutors</p>
@@ -58,56 +72,85 @@
         </div>
         <div class="value-grid">
             <article class="value-card reveal">
-                <h3>Personalization First</h3>
+                <h3>Personalization first</h3>
                 <p>Your learning path is engineered around your strengths, gaps, and goals.</p>
             </article>
             <article class="value-card reveal">
-                <h3>Mentorship Over Mass Teaching</h3>
+                <h3>Mentorship over mass teaching</h3>
                 <p>Every session delivers clarity, feedback, and direct support from experts.</p>
             </article>
             <article class="value-card reveal">
-                <h3>Real Problems. Real Outcomes.</h3>
+                <h3>Real problems. Real outcomes.</h3>
                 <p>You solve practical scenarios that mirror what companies expect from top candidates.</p>
             </article>
             <article class="value-card reveal">
-                <h3>Flexible by Design</h3>
+                <h3>Flexible by design</h3>
                 <p>Night classes and adaptable schedules keep your growth on track without disrupting your life.</p>
             </article>
         </div>
     </div>
 </section>
 
-<section class="section section-alt">
+<section class="section section-alt learning-hub-section compact-section">
+    <div class="container">
+        <div class="section-heading reveal">
+            <p class="kicker">Learning Hub</p>
+            <h2>A Tektutors classroom experience built for focus, accountability, and momentum.</h2>
+            <p>
+                We now pair mentorship with a dedicated learning management system where learners track assignments,
+                join class streams, review modules, and stay aligned with mentors week by week.
+            </p>
+        </div>
+        <div class="value-grid">
+            {% for feature in lms_features[:3] %}
+            <article class="value-card reveal">
+                <h3>{{ feature.title }}</h3>
+                <p>{{ feature.description }}</p>
+            </article>
+            {% endfor %}
+        </div>
+        <div class="section-action reveal">
+            <a class="btn btn-secondary" href="{{ url_for('lms') }}">Preview the Learning Hub</a>
+        </div>
+    </div>
+</section>
+
+<section class="section section-alt compact-section">
     <div class="container">
         <div class="section-heading reveal">
             <p class="kicker">Programs</p>
             <h2>Specializations designed for serious career transformation.</h2>
         </div>
         <div class="program-grid">
-            {% for program in programs %}
+            {% for program in programs[:6] %}
             <article class="program-card reveal">
                 <div class="program-icon" aria-hidden="true">
-                    <span>{{ loop.index }}</span>
+                    {{ program.icon|safe }}
                 </div>
-                <h3>{{ program.name }}</h3>
-                <p>{{ program.summary }}</p>
-                <div class="program-meta">
-                    <span>{{ program.duration }}</span>
-                    <span>{{ program.level }}</span>
+                <div class="program-content">
+                    <h3>{{ program.name }}</h3>
+                    <p>{{ program.summary }}</p>
+                    <div class="program-meta">
+                        <span>{{ program.duration }}</span>
+                        <span>{{ program.level }}</span>
+                    </div>
+                </div>
+                <div class="program-action">
+                    <a class="btn-tertiary" href="{{ url_for('programs') }}"><span>Learn more</span> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></a>
                 </div>
             </article>
             {% endfor %}
         </div>
         <div class="section-action reveal">
-            <a class="btn btn-secondary" href="{{ url_for('programs') }}">Explore All Programs</a>
+            <a class="btn btn-secondary" href="{{ url_for('programs') }}">Explore all programs</a>
         </div>
     </div>
 </section>
 
-<section class="section">
+<section class="section compact-section">
     <div class="container">
         <div class="section-heading reveal">
-            <p class="kicker">How It Works</p>
+            <p class="kicker">How it works</p>
             <h2>A clear path from beginner to job-ready data professional.</h2>
         </div>
         <div class="steps">
@@ -121,47 +164,10 @@
     </div>
 </section>
 
-<section class="section section-story">
-    <div class="container story-grid">
-        <div class="reveal">
-            <p class="kicker">Flexible Learning</p>
-            <h2>Your ambition should not wait for free time.</h2>
-            <p>
-                We designed Tektutors for professionals, graduates, and career-switchers balancing work, family,
-                and goals. Choose morning, evening, or night classes and keep moving forward every week.
-            </p>
-            <p>
-                With personal mentorship, you never fall behind. You adapt, learn, and progress with confidence.
-            </p>
-            <a class="btn btn-primary" href="{{ url_for('contact') }}#contact-form">Design My Schedule</a>
-        </div>
-        <div class="story-visual reveal">
-            <img
-                src="{{ url_for('static', filename='images/flexible-schedule.svg') }}"
-                alt="Flexible class schedule with morning, evening, and night session options"
-                loading="lazy"
-                decoding="async"
-                width="1400"
-                height="1000"
-                class="feature-image"
-            >
-            <aside class="story-card">
-                <h3>What this means for you</h3>
-                <ul>
-                    <li>No one-size-fits-all timetable.</li>
-                    <li>No overcrowded classrooms.</li>
-                    <li>No wasted lessons you cannot apply.</li>
-                    <li>Just focused sessions that move your career forward.</li>
-                </ul>
-            </aside>
-        </div>
-    </div>
-</section>
-
-<section class="section section-alt">
+<section class="section section-alt compact-section">
     <div class="container">
         <div class="section-heading reveal">
-            <p class="kicker">Tools & Skills</p>
+            <p class="kicker">Tools and skills</p>
             <h2>Master the stack employers actually hire for.</h2>
         </div>
         <div class="tools-grid">
@@ -175,10 +181,10 @@
     </div>
 </section>
 
-<section class="section">
+<section class="section compact-section">
     <div class="container">
         <div class="section-heading reveal">
-            <p class="kicker">Results from Learners</p>
+            <p class="kicker">Results from learners</p>
             <h2>Confidence. Clarity. Career momentum.</h2>
         </div>
         <div class="testimonial-grid">
@@ -193,15 +199,15 @@
     </div>
 </section>
 
-<section class="section cta-section">
+<section class="section cta-section compact-section">
     <div class="container cta-inner reveal">
-        <p class="kicker">Your Next Step</p>
-        <h2>Become a Data Professional Today.</h2>
+        <p class="kicker">Your next step</p>
+        <h2>Become a data professional today.</h2>
         <p>
             The fastest way to transform your career is focused mentorship, consistent execution, and the right support.
             Start now and build the future you want.
         </p>
-        <a class="btn btn-primary" href="{{ url_for('contact') }}#contact-form">Book Your Free Consultation</a>
+        <a class="btn btn-primary" href="{{ url_for('contact') }}#contact-form">Book your free consultation</a>
     </div>
 </section>
 
@@ -210,12 +216,12 @@
         <div class="reveal">
             <p class="kicker">Contact</p>
             <h2>Ready to start? Let us map your roadmap.</h2>
-            <p>Email: <a href="mailto:info@tektutors.com.ng">info@tektutors.com.ng</a></p>
-            <p>Phone: <a href="tel:+2348063584517">+2348063584517</a></p>
-            <p>Website: <a href="https://www.tektutors.com.ng" target="_blank" rel="noopener">www.tektutors.com.ng</a></p>
+            <p>Email: <a href="mailto:info@tektutors.com.ng">Email Tektutors</a></p>
+            <p>Phone: <a href="tel:+2348063584517">Call Tektutors</a></p>
+            <p>Website: <a href="https://www.tektutors.com.ng" target="_blank" rel="noopener">Visit Tektutors Online</a></p>
         </div>
         <div class="reveal">
-            <a class="btn btn-secondary" href="{{ url_for('contact') }}#contact-form">Send a Message</a>
+            <a class="btn btn-secondary" href="{{ url_for('contact') }}#contact-form">Send a message</a>
         </div>
     </div>
 </section>

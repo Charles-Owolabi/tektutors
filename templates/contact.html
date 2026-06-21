@@ -13,8 +13,8 @@
         </div>
         <div class="hero-visual reveal">
             <img
-                src="{{ url_for('static', filename='images/flexible-schedule.svg') }}"
-                alt="Flexible mentorship schedule with morning, evening, and night classes"
+                src="{{ url_for('static', filename='images/contact-customer-service-team.png') }}"
+                alt="Young African customer service agents ready to help learners with training inquiries"
                 loading="lazy"
                 decoding="async"
                 width="1400"
@@ -28,18 +28,22 @@
 <section class="section">
     <div class="container contact-grid">
         <aside class="contact-info reveal">
-            <h2>Reach Us Directly</h2>
-            <p>Email: <a href="mailto:info@tektutors.com.ng">info@tektutors.com.ng</a></p>
-            <p>Phone: <a href="tel:+2348063584517">+2348063584517</a></p>
-            <p>Website: <a href="https://www.tektutors.com.ng" target="_blank" rel="noopener">www.tektutors.com.ng</a></p>
+            <h2>Reach us directly</h2>
+            <p>Email: <a href="mailto:info@tektutors.com.ng">Email Tektutors</a></p>
+            <p>Phone: <a href="tel:+2348063584517">Call Tektutors</a></p>
+            <p>Website: <a href="https://www.tektutors.com.ng" target="_blank" rel="noopener">Visit Tektutors Online</a></p>
+            <div class="hero-cta">
+                <a class="btn btn-primary" href="{{ url_for('registration') }}">Open registration form</a>
+            </div>
             <div class="social-links social-links-inline">
+                <a class="social-link" href="https://twitter.com/tek_tutors" target="_blank" rel="noopener">Twitter / X</a>
                 <a class="social-link" href="https://www.instagram.com/tektutorsng" target="_blank" rel="noopener">Instagram</a>
                 <a class="social-link" href="https://web.facebook.com/tektutors" target="_blank" rel="noopener">Facebook</a>
-                <a class="social-link" href="https://linkedin.com/company/tektutorsng" target="_blank" rel="noopener">LinkedIn</a>
+                <a class="social-link" href="https://www.linkedin.com/company/tektutorsng/" target="_blank" rel="noopener">LinkedIn</a>
             </div>
             <img
-                src="{{ url_for('static', filename='images/mentorship-network.svg') }}"
-                alt="One-on-one mentorship network visualization"
+                src="{{ url_for('static', filename='images/contact-support-agent.png') }}"
+                alt="Young African customer service agent assisting a learner online"
                 loading="lazy"
                 decoding="async"
                 width="1400"
@@ -47,24 +51,25 @@
                 class="feature-image"
             >
             <p class="contact-note">
-                Response time: Within 24 hours. Urgent inquiry? Use the WhatsApp button for faster response.
+                Response time: within 24 hours. Urgent inquiry? Use the WhatsApp button for a faster response.
             </p>
         </aside>
 
         <form id="contact-form" class="contact-form reveal" action="{{ url_for('contact') }}" method="post">
-            <h2>Book a Free Consultation</h2>
+            {{ csrf_field() }}
+            <h2>Book a free consultation</h2>
             <p>Share your goals and we will match you with the right mentor and schedule.</p>
 
-            <label for="name">Full Name</label>
+            <label for="name">Full name</label>
             <input id="name" name="name" type="text" placeholder="Your full name" required>
 
-            <label for="email">Email Address</label>
+            <label for="email">Email address</label>
             <input id="email" name="email" type="email" placeholder="you@example.com" required>
 
-            <label for="phone">Phone Number</label>
+            <label for="phone">Phone number</label>
             <input id="phone" name="phone" type="tel" placeholder="+234...">
 
-            <label for="program">Program of Interest</label>
+            <label for="program">Program of interest</label>
             <select id="program" name="program">
                 <option value="">Select a program</option>
                 {% for program in programs %}
@@ -73,23 +78,20 @@
                 <option value="Not sure yet">Not sure yet</option>
             </select>
 
-            <label for="availability">Preferred Schedule</label>
-            <select id="availability" name="availability">
-                <option value="">Choose your preferred time</option>
-                <option value="Morning">Morning</option>
-                <option value="Afternoon">Afternoon</option>
-                <option value="Evening">Evening</option>
-                <option value="Night classes">Night classes</option>
-                <option value="Weekend">Weekend</option>
-                <option value="Flexible">Flexible</option>
-            </select>
+            <label for="preferred-date">Preferred consultation date</label>
+            <input id="preferred-date" name="preferred_date" type="date" required>
 
-            <label for="message">Your Goal</label>
+            <label for="preferred-time">Preferred consultation time</label>
+            <input id="preferred-time" name="preferred_time" type="time" required>
+
+            <label for="message">Your goal</label>
             <textarea id="message" name="message" rows="5" placeholder="What do you want to achieve with data skills?" required></textarea>
 
+            <input type="hidden" name="form_started_at" value="{{ form_started_at }}">
             <input type="text" name="company" tabindex="-1" autocomplete="off" class="honeypot" aria-hidden="true">
+            <input type="text" name="website" tabindex="-1" autocomplete="off" class="honeypot" aria-hidden="true">
 
-            <button type="submit" class="btn btn-primary">Submit Request</button>
+            <button type="submit" class="btn btn-primary">Submit request</button>
         </form>
     </div>
 </section>

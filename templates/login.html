@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="section auth-section">
+    <div class="container auth-grid">
+        <div class="auth-panel reveal">
+            <p class="kicker">Sign in</p>
+            <h1>Access your Tektutors classroom dashboard.</h1>
+            <p>
+                Only candidates who have been approved by the admin can sign in to the Learning Hub.
+                Use the login details sent to you after your class registration has been reviewed and confirmed.
+            </p>
+        </div>
+        <form class="contact-form auth-form reveal" action="{{ url_for('login', next=request.args.get('next', '')) }}" method="post">
+            {{ csrf_field() }}
+            <h2>Welcome back</h2>
+            <label for="email">Email address</label>
+            <input id="email" name="email" type="email" placeholder="you@example.com" required>
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" placeholder="Your password" required>
+            <button type="submit" class="btn btn-primary">Sign in</button>
+            <p class="auth-switch"><a href="{{ url_for('forgot_password') }}">Forgot your password?</a></p>
+            <p class="auth-switch">Need Learning Hub access? <a href="{{ url_for('register') }}">See how approval works</a>.</p>
+        </form>
+    </div>
+</section>
+{% endblock %}

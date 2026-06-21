@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="section dashboard-section">
+    <div class="container">
+        <div class="section-heading reveal">
+            <p class="kicker">Learner dashboard</p>
+            <h1>Welcome back, {{ current_user.name }}.</h1>
+        </div>
+        {% if current_user.must_change_password %}
+        <article class="dashboard-card reveal">
+            <p class="kicker">Password reset available</p>
+            <h2>Your account is still using a temporary password.</h2>
+            <p>You can keep using the portal, and when you're ready, set a personal password from your account page.</p>
+            <a class="btn btn-secondary" href="{{ url_for('account_password') }}">Set a personal password</a>
+        </article>
+        {% endif %}
+        <div class="lms-stats dashboard-stats-strip reveal">
+            {% for stat in dashboard_data.stats %}
+            <article class="lms-stat-card">
+                <p>{{ stat.label }}</p>
+                <h2>{{ stat.value }}</h2>
+            </article>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="section dashboard-tab-panel" id="my-classrooms">
+    <div class="container">
+        <div class="section-heading reveal">
+            <p class="kicker">My classrooms</p>
+            <h2>Your active learning spaces.</h2>
+        </div>
+        <div class="workspace-filter-bar learner-classroom-tools reveal">
+            <form class="learner-join-form" action="{{ url_for('join_classroom') }}" method="post">
+                {{ csrf_field() }}
+                <label class="sr-only" for="code">Classroom code</label>
+                <input id="code" name="code" type="text" placeholder="Classroom code" required>
+                <button type="submit" class="btn btn-primary">Join classroom</button>
+            </form>
+        </div>
+        <div class="dashboard-grid">
+            {% for classroom in dashboard_data.classrooms %}
+            <article class="dashboard-card reveal student-classroom-card" data-filter-card>
+                <div class="classroom-card-main">
+                    <div class="lms-classroom-header">
+                        <span class="lms-classroom-code">{{ classroom.code }}</span>
+                        <span class="lms-status-pill">{{ classroom.submitted_total }}/{{ classroom.assignment_total }} submitted</span>
+                    </div>
+                    <h3>{{ classroom.title }}</h3>
+                    <p class="lms-card-description">{{ classroom.description|linkify("Open classroom link") }}</p>
+                </div>
+                <div class="classroom-card-aside">
+                    <div class="program-meta classroom-card-meta">
+                        <span>{{ classroom.cohort }}</span>
+                        <span>{{ classroom.schedule }}</span>
+                    </div>
+                    <p class="classroom-card-detail"><strong>Mentor:</strong> {{ classroom.mentor_name }}</p>
+                    <p class="classroom-card-detail"><strong>Materials:</strong> {{ classroom.material_total }}</p>
+                    <div class="lms-card-progress-footer">
+                        <span class="lms-duration-pill">{{ classroom.course_duration }}</span>
+                        <div class="lms-progress">
+                            <div class="lms-progress-top">
+                                <span>Class progress</span>
+                                <strong>{{ classroom.progress }}%</strong>
+                            </div>
+                            <div class="lms-progress-track" aria-hidden="true">
+                                <span style="width: {{ classroom.progress }}%"></span>
+                            </div>
+                            <p class="lms-stream-meta">{{ classroom.progress_label }}</p>
+                        </div>
+                    </div>
+                    <a class="btn btn-secondary" href="{{ url_for('lms_classroom', slug=classroom.slug) }}">Open classroom</a>
+                </div>
+            </article>
+            {% else %}
+            <article class="dashboard-card reveal">
+                <h3>No classrooms yet</h3>
+                <p>Use a classroom code to join your first Tektutors course.</p>
+            </article>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

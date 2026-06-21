@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-hero">
+    <div class="container page-hero-grid">
+        <div class="reveal">
+            <p class="kicker">Registration</p>
+            <h1>Data Analysis Training Registration Form</h1>
+            <p>
+                Please fill the form with sincerity so as to enable us make informed decision with your training.
+                Feel free to reach out to us should you have any reservation about any information in the form.
+            </p>
+        </div>
+        <div class="hero-visual reveal">
+            <img
+                src="{{ url_for('static', filename='images/flexible-learning.png') }}"
+                alt="Online data analysis training with structured mentorship"
+                loading="lazy"
+                decoding="async"
+                width="1400"
+                height="1000"
+                class="hero-image"
+            >
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <form class="contact-form registration-form reveal" action="{{ url_for('registration') }}" method="post" enctype="multipart/form-data">
+            {{ csrf_field() }}
+            <div class="registration-section">
+                <p class="kicker">Section 1 of 2</p>
+                <h2>Data Analysis Training Registration Form</h2>
+                <p>Please fill the form with sincerity so as to enable us make informed decision with your training. Feel free to reach out to us should you have any reservation about any information in the form.</p>
+
+                <label for="name">Name (Full name) *</label>
+                <input id="name" name="name" type="text" placeholder="Your full name" required>
+
+                <label for="email">Email *</label>
+                <input id="email" name="email" type="email" placeholder="you@example.com" required>
+
+                <label for="phone">Phone Number *</label>
+                <input id="phone" name="phone" type="tel" placeholder="+234..." required>
+
+                <fieldset class="registration-fieldset">
+                    <legend>Highest Academic Qualifications *</legend>
+                    <div class="choice-grid">
+                        {% for item in academic_qualifications %}
+                        <label class="choice-card">
+                            <input type="radio" name="highest_qualification" value="{{ item }}" required>
+                            <span>{{ loop.index }}. {{ item }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+
+                <label for="discipline">Discipline (e.g Sales, marketing, banking, manufacturing, business, education, engineering etc.) *</label>
+                <input id="discipline" name="discipline" type="text" placeholder="Your discipline or industry background" required>
+
+                <fieldset class="registration-fieldset">
+                    <legend>How would you rate your current data analysis skills? (Scale: 1-5) 1: Novice, 2: Beginner, 3: Intermediate, 4: Advanced, 5: Expert *</legend>
+                    <div class="choice-grid rating-grid">
+                        {% for level in ["1", "2", "3", "4", "5"] %}
+                        <label class="choice-card">
+                            <input type="radio" name="skill_level" value="{{ level }}" required>
+                            <span>{{ level }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+
+                <label for="past_training">Have you attended any data analysis training in the past? If yes, please provide details. If no, simply write Nil *</label>
+                <textarea id="past_training" name="past_training" rows="4" placeholder="Share previous training details or write Nil" required></textarea>
+
+                <label for="preferred_course">Your preferred course (Kindly select one) *</label>
+                <select id="preferred_course" name="preferred_course" required>
+                    <option value="">Select one course</option>
+                    {% for course in course_options %}
+                    <option value="{{ course }}">{{ course }}</option>
+                    {% endfor %}
+                </select>
+
+                <fieldset class="registration-fieldset">
+                    <legend>Please select any two as it best suit you. *</legend>
+                    <p class="field-help">Choose exactly two preferred training days.</p>
+                    <div class="choice-grid">
+                        {% for day in training_days %}
+                        <label class="choice-card">
+                            <input type="checkbox" name="preferred_days" value="{{ day }}">
+                            <span>{{ day }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+
+                <label for="preferred_start_date">Your preferred start date *</label>
+                <input id="preferred_start_date" name="preferred_start_date" type="date" required>
+
+                <label for="preferred_time_slot">Your preferred time slot (e.g., 6pm-8pm, 9pm-11pm) *</label>
+                <input id="preferred_time_slot" name="preferred_time_slot" type="text" placeholder="e.g. 6pm-8pm" required>
+
+                <fieldset class="registration-fieldset">
+                    <legend>This training is scheduled to hold twice a week (4hrs per week) and for a duration of 6 weeks. *</legend>
+                    <div class="choice-grid">
+                        <label class="choice-card">
+                            <input type="radio" name="schedule_acknowledgement" value="I understand and agree" required>
+                            <span>I understand and agree</span>
+                        </label>
+                        <label class="choice-card">
+                            <input type="radio" name="schedule_acknowledgement" value="I don't know and I disagree" required>
+                            <span>I don't know and I disagree</span>
+                        </label>
+                    </div>
+                </fieldset>
+
+                <fieldset class="registration-fieldset">
+                    <legend>This training is online based; you are expected to join the training session from your PC (computer). Please note that joining the session from your phone is not allowed. *</legend>
+                    <div class="choice-grid">
+                        <label class="choice-card">
+                            <input type="radio" name="pc_only_acknowledgement" value="I agree" required>
+                            <span>I agree</span>
+                        </label>
+                        <label class="choice-card">
+                            <input type="radio" name="pc_only_acknowledgement" value="I disagree" required>
+                            <span>I disagree</span>
+                        </label>
+                    </div>
+                </fieldset>
+
+                <fieldset class="registration-fieldset">
+                    <legend>In other to achieve the goal of this training, maximum commitment is required. Are you willing to be committed to training sessions, quiz and assignment? *</legend>
+                    <div class="choice-grid">
+                        <label class="choice-card">
+                            <input type="radio" name="commitment_acknowledgement" value="YES" required>
+                            <span>YES</span>
+                        </label>
+                        <label class="choice-card">
+                            <input type="radio" name="commitment_acknowledgement" value="NO" required>
+                            <span>NO</span>
+                        </label>
+                    </div>
+                </fieldset>
+
+                <fieldset class="registration-fieldset">
+                    <legend>Are you willing to allocate time outside of regular work hours and other commitment to participate in training sessions? *</legend>
+                    <div class="choice-grid">
+                        <label class="choice-card">
+                            <input type="radio" name="outside_hours_acknowledgement" value="YES" required>
+                            <span>YES</span>
+                        </label>
+                        <label class="choice-card">
+                            <input type="radio" name="outside_hours_acknowledgement" value="NO" required>
+                            <span>NO</span>
+                        </label>
+                    </div>
+                </fieldset>
+
+                <fieldset class="registration-fieldset">
+                    <legend>Do you have a Personal Computer (PC) with a decent configuration and good power backup that can last for at least 2 hours? *</legend>
+                    <div class="choice-grid">
+                        <label class="choice-card">
+                            <input type="radio" name="has_pc" value="YES" required>
+                            <span>YES</span>
+                        </label>
+                        <label class="choice-card">
+                            <input type="radio" name="has_pc" value="NO" required>
+                            <span>NO</span>
+                        </label>
+                    </div>
+                </fieldset>
+
+                <fieldset class="registration-fieldset">
+                    <legend>Do you have access to good, stable and quality internet? *</legend>
+                    <div class="choice-grid">
+                        <label class="choice-card">
+                            <input type="radio" name="has_internet" value="YES" required>
+                            <span>YES</span>
+                        </label>
+                        <label class="choice-card">
+                            <input type="radio" name="has_internet" value="NO" required>
+                            <span>NO</span>
+                        </label>
+                    </div>
+                </fieldset>
+
+                <label for="additional_comments">Additional comments or suggestions for the training program *</label>
+                <textarea id="additional_comments" name="additional_comments" rows="5" placeholder="Share any helpful context, questions, or suggestions" required></textarea>
+            </div>
+
+            <div class="registration-section payment-section">
+                <p class="kicker">Section 2 of 2</p>
+                <h2>Payment</h2>
+                <p>This section completes your registration.</p>
+                <div class="payment-card">
+                    <p>Please pay to this account details and upload your payment receipt/evidence:</p>
+                    <p><strong>Bank:</strong> Moniepoint MFB</p>
+                    <p><strong>Account Number:</strong> 8286371831</p>
+                    <p><strong>Account Name:</strong> Chartkonsult Analytics</p>
+                    <p>For further clarification, <a href="mailto:tektutors@gmail.com">email Tektutors</a> or <a href="tel:+2348063584517">call support</a>.</p>
+                </div>
+
+                <label for="payment_receipt">Upload payment receipt/evidence *</label>
+                <input id="payment_receipt" name="payment_receipt" type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" required>
+
+                <input type="hidden" name="form_started_at" value="{{ form_started_at }}">
+                <input type="text" name="company" tabindex="-1" autocomplete="off" class="honeypot" aria-hidden="true">
+                <input type="text" name="website" tabindex="-1" autocomplete="off" class="honeypot" aria-hidden="true">
+
+                <button type="submit" class="btn btn-primary">Submit Registration</button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

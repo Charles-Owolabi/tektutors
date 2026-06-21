@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-hero lms-hero">
+    <div class="container page-hero-grid">
+        <div class="reveal lms-hero-copy">
+            <p class="kicker">Tektutors Learning Hub</p>
+            <h1>A simple private space for classes, assignments, and mentor support.</h1>
+            <p class="lms-hero-intro">
+                The Learning Hub helps approved learners access class materials, follow weekly updates, and submit
+                work in one organized place.
+            </p>
+            <div class="hero-cta lms-hero-actions">
+                {% if current_user %}
+                <a class="btn btn-primary" href="{{ url_for('dashboard') }}">Open my dashboard</a>
+                {% else %}
+                <a class="btn btn-primary" href="{{ url_for('contact') }}#contact-form">Apply for a class</a>
+                <a class="btn btn-secondary" href="{{ url_for('login') }}">Sign in</a>
+                {% endif %}
+            </div>
+            <div class="lms-access-note">
+                <strong>How access works:</strong>
+                After class registration is reviewed and approved by the admin team, your Learning Hub login details are issued.
+            </div>
+        </div>
+        <div class="reveal lms-preview-card">
+            <div class="lms-preview-shell">
+                <div class="lms-preview-topbar">
+                    <span></span><span></span><span></span>
+                    <small>Classroom preview</small>
+                </div>
+                <div class="lms-preview-layout">
+                    <aside>
+                        <strong>Learning Hub</strong>
+                        <p class="is-active">Dashboard</p>
+                        <p>Modules</p>
+                        <p>Assignments</p>
+                        <p>Classroom</p>
+                    </aside>
+                    <div>
+                        <div class="lms-preview-banner">
+                            <p class="kicker">Inside the hub</p>
+                            <h2>Everything learners need stays clear and easy to follow.</h2>
+                            <p>Access lessons, check tasks, and stay aligned with your mentor from one dashboard.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section lms-journey-section">
+    <div class="container">
+        <div class="lms-journey reveal">
+            <div class="section-heading">
+                <p class="kicker">How it works</p>
+                <h2>A short path from registration to classroom access.</h2>
+            </div>
+            <div class="lms-journey-grid">
+                <article class="lms-journey-card">
+                    <span>01</span>
+                    <h3>Register for a class</h3>
+                    <p>Start by choosing the Tektutors program that matches your learning goals.</p>
+                </article>
+                <article class="lms-journey-card">
+                    <span>02</span>
+                    <h3>Wait for approval</h3>
+                    <p>The admin team reviews your enrollment before private Learning Hub access is enabled.</p>
+                </article>
+                <article class="lms-journey-card">
+                    <span>03</span>
+                    <h3>Sign in and start learning</h3>
+                    <p>After approval, you receive login details and can enter your classroom.</p>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section lms-capabilities-section">
+    <div class="container">
+        <div class="section-heading reveal">
+            <p class="kicker">What you can do</p>
+            <h2>The hub keeps learning tasks simple and organized.</h2>
+        </div>
+        <div class="value-grid">
+            {% for feature in lms_features[:4] %}
+            <article class="value-card reveal">
+                <h3>{{ feature.title }}</h3>
+                <p>{{ feature.description }}</p>
+            </article>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}
