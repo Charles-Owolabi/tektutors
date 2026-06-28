@@ -109,6 +109,9 @@ def create_meeting(topic, agenda, start_time_iso, duration_mins):
         "Authorization": f"Zoho-oauthtoken {access_token}",
         "Content-Type": "application/json;charset=UTF-8"
     }
+    
+    zuid = get_env_var("ZOHO_ZUID")
+    
     payload = {
         "session": {
             "topic": topic,
@@ -118,6 +121,12 @@ def create_meeting(topic, agenda, start_time_iso, duration_mins):
             "timezone": timezone
         }
     }
+    
+    if zuid:
+        try:
+            payload["session"]["presenter"] = int(zuid)
+        except ValueError:
+            payload["session"]["presenter"] = zuid
 
     try:
         response = requests.post(url, json=payload, headers=headers, timeout=10)
@@ -228,6 +237,6 @@ def mock_create_meeting(topic, agenda, start_time_iso, duration_mins):
     print(f"Creating mock Zoho Meeting: Key={mock_key}")
     return {
         "meetingKey": mock_key,
-        "joinLink": f"https://meeting.zoho.com/join?key={mock_key}",
-        "startLink": f"https://meeting.zoho.com/meeting-start?key={mock_key}"
+        "joinLink": f"/lms/meeting/mock/{mock_key}?role=student",
+        "startLink": f"/lms/meeting/mock/{mock_key}?role=host"
     }

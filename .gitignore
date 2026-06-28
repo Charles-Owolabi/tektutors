@@ -1,4 +1,4 @@
-﻿# Python cache
+# Python cache
 __pycache__/
 *.py[cod]
 
@@ -7,11 +7,9 @@ __pycache__/
 venv/
 env/
 
-# Local data submissions
-data/*.csv
-data/*.db
-data/zoho_token.json
-data/uploads/
+# Local runtime data
+data/**
+!data/.gitkeep
 
 # Logs
 *.log

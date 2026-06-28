@@ -1,0 +1,1111 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Live Session: {{ meeting.topic }} | Tektutors Learning Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/site_logo.png') }}">
+    <style>
+        :root {
+            --bg-color: #0f1322;
+            --card-bg: rgba(30, 41, 59, 0.4);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-red-hover: #dc2626;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --font-family: 'Plus Jakarta Sans', sans-serif;
+            --font-heading: 'Outfit', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-family);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Header Bar */
+        .meeting-header {
+            height: 70px;
+            background: rgba(15, 19, 34, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 10;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo-img {
+            height: 28px;
+        }
+
+        .meeting-badge {
+            background: rgba(37, 99, 235, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(37, 99, 235, 0.3);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .meeting-info h1 {
+            font-family: var(--font-heading);
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 2px;
+        }
+
+        .meeting-info p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .timer-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #60a5fa;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .timer-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        /* Main Workspace: Split video grid & chat */
+        .workspace {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Video Area */
+        .video-container {
+            flex: 1;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* Video Call Layouts */
+        .call-layout {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 2.5fr 1fr;
+            gap: 20px;
+            min-height: 0;
+        }
+
+        @media (max-width: 1024px) {
+            .call-layout {
+                grid-template-columns: 1fr;
+                grid-template-rows: 2fr 1fr;
+            }
+        }
+
+        .primary-screen {
+            background: #0b0d19;
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);
+        }
+
+        .screen-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .avatar-ring {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1d4ed8, #2563eb);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            font-family: var(--font-heading);
+            font-weight: 800;
+            color: #fff;
+            box-shadow: 0 0 40px rgba(37,99,235,0.4);
+            position: relative;
+        }
+
+        /* Dynamic Sound Wave Indicator */
+        .active-speaker-ring {
+            position: absolute;
+            top: -6px;
+            left: -6px;
+            right: -6px;
+            bottom: -6px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-green);
+            animation: ring-pulse 2s infinite ease-in-out;
+            opacity: 0.8;
+        }
+
+        .speaker-waves {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            height: 24px;
+        }
+
+        .wave-bar {
+            width: 3px;
+            height: 6px;
+            background: var(--accent-green);
+            border-radius: 2px;
+            animation: sound-bounce 1.2s infinite ease-in-out;
+        }
+        .wave-bar:nth-child(2) { animation-delay: 0.15s; height: 12px; }
+        .wave-bar:nth-child(3) { animation-delay: 0.3s; height: 18px; }
+        .wave-bar:nth-child(4) { animation-delay: 0.45s; height: 10px; }
+        .wave-bar:nth-child(5) { animation-delay: 0.6s; height: 14px; }
+
+        .tag-overlay {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            background: rgba(15, 19, 34, 0.75);
+            backdrop-filter: blur(8px);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent-green);
+        }
+
+        /* Sidebar Video Grid */
+        .sidebar-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+            max-height: 100%;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar-grid {
+                flex-direction: row;
+                overflow-x: auto;
+                height: 120px;
+            }
+        }
+
+        .small-feed {
+            background: #0b0d19;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            height: 140px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: border-color 0.2s;
+        }
+
+        @media (max-width: 1024px) {
+            .small-feed {
+                width: 180px;
+                height: 100px;
+            }
+        }
+
+        .small-feed:hover {
+            border-color: rgba(255,255,255,0.15);
+        }
+
+        .small-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--text-main);
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+
+        .small-tag {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            background: rgba(15, 19, 34, 0.8);
+            backdrop-filter: blur(4px);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border: 1px solid var(--card-border);
+            max-width: calc(100% - 16px);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Collapsible Chat Panel */
+        .chat-panel {
+            width: 360px;
+            background: rgba(15, 19, 34, 0.8);
+            backdrop-filter: blur(12px);
+            border-left: 1px solid var(--card-border);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .chat-panel.collapsed {
+            width: 0;
+            border-left: 0;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            height: 60px;
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+        }
+
+        .chat-header h2 {
+            font-family: var(--font-heading);
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .chat-close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-close-btn:hover {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-main);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .chat-msg {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            max-width: 85%;
+        }
+
+        .chat-msg.self {
+            align-self: flex-end;
+        }
+
+        .msg-meta {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-msg.self .msg-meta {
+            justify-content: flex-end;
+        }
+
+        .msg-bubble {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--card-border);
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            color: var(--text-main);
+        }
+
+        .chat-msg.self .msg-bubble {
+            background: var(--primary);
+            border-color: transparent;
+            color: #fff;
+            border-bottom-right-radius: 2px;
+        }
+
+        .chat-msg:not(.self) .msg-bubble {
+            border-bottom-left-radius: 2px;
+        }
+
+        .chat-input-area {
+            padding: 16px;
+            border-top: 1px solid var(--card-border);
+            background: rgba(15, 19, 34, 0.4);
+        }
+
+        .chat-form {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: var(--text-main);
+            font-family: var(--font-family);
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .chat-input:focus {
+            border-color: var(--primary);
+        }
+
+        .chat-send-btn {
+            background: var(--primary);
+            border: none;
+            color: white;
+            border-radius: 8px;
+            padding: 0 16px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-send-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Bottom Controls Bar */
+        .controls-bar {
+            height: 80px;
+            background: rgba(15, 19, 34, 0.9);
+            backdrop-filter: blur(16px);
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            z-index: 10;
+        }
+
+        .controls-left {
+            min-width: 200px;
+        }
+
+        .classroom-info-badge {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .controls-center {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .control-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.05);
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn:hover {
+            background: rgba(255,255,255,0.15);
+            transform: scale(1.05);
+        }
+
+        .control-btn.active {
+            background: #fff;
+            color: #0f1322;
+        }
+
+        .control-btn.danger {
+            background: var(--accent-red);
+            border-color: transparent;
+        }
+
+        .control-btn.danger:hover {
+            background: var(--accent-red-hover);
+        }
+
+        .control-btn.muted {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--accent-red);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .control-btn.muted:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .controls-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 200px;
+            justify-content: flex-end;
+        }
+
+        .info-panel-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .info-panel-btn:hover {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-main);
+        }
+
+        .info-panel-btn.active {
+            color: var(--primary);
+            background: rgba(37, 99, 235, 0.1);
+        }
+
+        /* Pulse and Bounce Animations */
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes ring-pulse {
+            0% { transform: scale(0.98); opacity: 0.8; }
+            50% { transform: scale(1.06); opacity: 0.2; }
+            100% { transform: scale(0.98); opacity: 0.8; }
+        }
+
+        @keyframes sound-bounce {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(0.3); }
+        }
+
+        /* Screen Sharing Presentation Frame */
+        .screenshare-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #111827;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 5;
+        }
+
+        .screenshare-wrapper.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .share-screen-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            text-align: center;
+        }
+
+        .share-icon-large {
+            width: 80px;
+            height: 80px;
+            color: var(--primary);
+            background: rgba(37, 99, 235, 0.1);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+            animation: float 3s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        /* Interactive UI overlay */
+        .toast-notify {
+            position: absolute;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 19, 34, 0.95);
+            border: 1px solid var(--accent-green);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .toast-notify.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header bar -->
+    <header class="meeting-header">
+        <div class="header-left">
+            <img src="{{ url_for('static', filename='images/tektutors-logo.svg') }}" alt="Tektutors" class="logo-img">
+            <span class="meeting-badge">Simulated Live Class</span>
+            <div class="meeting-info">
+                <h1>{{ meeting.topic }}</h1>
+                <p>{{ meeting.classroom_title }} ({{ role.capitalize() }} Portal)</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="timer-box">
+                <span class="timer-dot"></span>
+                <span id="countdown-timer">Remaining: --:--</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main call area -->
+    <div class="workspace">
+        <div class="video-container">
+            <div class="call-layout">
+                <!-- Large active speaker view -->
+                <div class="primary-screen" id="primary-view">
+                    
+                    <!-- Screen sharing placeholder frame -->
+                    <div class="screenshare-wrapper" id="screenshare-view">
+                        <div class="share-screen-content">
+                            <div class="share-icon-large">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M21 3H3c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h7l-2 3v1h8v-1l-2-3h7c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 12H3V5h18v10z"/>
+                                </svg>
+                            </div>
+                            <h2 style="font-family: var(--font-heading); font-size: 1.3rem;">Presentation Screen</h2>
+                            <p style="color: var(--text-muted); font-size: 0.85rem;" id="screenshare-label">Screen sharing is active</p>
+                        </div>
+                    </div>
+
+                    <!-- Speaker avatar view -->
+                    <div class="screen-placeholder" id="active-user-avatar">
+                        <div class="avatar-ring" id="speaker-avatar">
+                            {% if role == 'host' %}
+                                M
+                                <div class="active-speaker-ring"></div>
+                            {% else %}
+                                S
+                                <div class="active-speaker-ring"></div>
+                            {% endif %}
+                        </div>
+                        <div class="speaker-waves" id="active-waves">
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                        </div>
+                    </div>
+
+                    <div class="tag-overlay">
+                        <span class="status-dot" id="primary-status-dot"></span>
+                        <span id="active-speaker-name">
+                            {% if role == 'host' %}
+                                {{ classroom.mentor_name }} (Host)
+                            {% else %}
+                                {{ g.user.name }} (You)
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Classroom small participants grid -->
+                <div class="sidebar-grid">
+                    {% if role == 'host' %}
+                        <!-- Self feed for host -->
+                        <div class="small-feed" id="self-feed">
+                            <div class="small-avatar" style="background: linear-gradient(135deg, #10b981, #059669);">You</div>
+                            <div class="small-tag">Mentor (Host)</div>
+                        </div>
+                    {% else %}
+                        <!-- Host feed for students -->
+                        <div class="small-feed" id="host-feed">
+                            <div class="small-avatar" style="background: linear-gradient(135deg, #2563eb, #1d4ed8);">{{ classroom.mentor_name[0] }}</div>
+                            <div class="small-tag">{{ classroom.mentor_name }} (Mentor)</div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Simulated online classmates -->
+                    <div class="small-feed">
+                        <div class="small-avatar">A</div>
+                        <div class="small-tag">Amina B.</div>
+                    </div>
+                    <div class="small-feed">
+                        <div class="small-avatar">V</div>
+                        <div class="small-tag">Victor E.</div>
+                    </div>
+                    <div class="small-feed">
+                        <div class="small-avatar">G</div>
+                        <div class="small-tag">Grace P.</div>
+                    </div>
+                    <div class="small-feed">
+                        <div class="small-avatar">O</div>
+                        <div class="small-tag">Oluwaseun J.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Chat Panel -->
+        <div class="chat-panel" id="chat-panel">
+            <div class="chat-header">
+                <h2>Classroom Chat</h2>
+                <button class="chat-close-btn" onclick="toggleChat()" aria-label="Close Chat">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="chat-messages" id="chat-box">
+                <!-- Initial welcoming simulated message -->
+                <div class="chat-msg">
+                    <span class="msg-meta">System &bull; Now</span>
+                    <div class="msg-bubble">Welcome to the class stream! Start typing in the box below to chat.</div>
+                </div>
+                <div class="chat-msg">
+                    <span class="msg-meta">
+                        {% if role == 'host' %}
+                            Student Assistant
+                        {% else %}
+                            {{ classroom.mentor_name }} (Mentor)
+                        {% endif %}
+                        &bull; 2 mins ago
+                    </span>
+                    <div class="msg-bubble">Welcome everyone! Glad to have you all here. Please introduce yourselves and let me know if you can see my screen shared.</div>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <form class="chat-form" id="chat-form" onsubmit="sendChatMessage(event)">
+                    <input type="text" class="chat-input" id="chat-input" placeholder="Type a message..." autocomplete="off" required>
+                    <button type="submit" class="chat-send-btn">Send</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toast-notify" id="toast-notification">Notification text</div>
+
+    <!-- Bottom Actions Bar -->
+    <footer class="controls-bar">
+        <div class="controls-left">
+            <div class="classroom-info-badge">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                </svg>
+                <span>Code: {{ classroom.code }} | Cohort: {{ classroom.cohort }}</span>
+            </div>
+        </div>
+
+        <div class="controls-center">
+            <!-- Mic control -->
+            <button class="control-btn" id="mic-btn" onclick="toggleMic()" title="Mute/Unmute Mic">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" id="mic-icon">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
+            </button>
+
+            <!-- Video control -->
+            <button class="control-btn" id="cam-btn" onclick="toggleCam()" title="Start/Stop Video">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" id="cam-icon">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+            </button>
+
+            <!-- Share screen control -->
+            <button class="control-btn" id="share-btn" onclick="toggleShare()" title="Share Screen">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" id="share-icon">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+            </button>
+
+            <!-- Host specific tools -->
+            {% if role == 'host' %}
+                <button class="control-btn" onclick="muteAll()" title="Mute All Participants">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                    </svg>
+                </button>
+            {% endif %}
+
+            <!-- Leave call control -->
+            <a href="{{ url_for('lms_classroom', slug=meeting.classroom_slug) }}" class="control-btn danger" title="Leave Session">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+            </a>
+        </div>
+
+        <div class="controls-right">
+            <button class="info-panel-btn active" id="chat-toggle-btn" onclick="toggleChat()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                <span>Chat</span>
+            </button>
+        </div>
+    </footer>
+
+    <script>
+        // Set up variables
+        let micActive = true;
+        let camActive = true;
+        let sharingActive = false;
+        let chatCollapsed = false;
+
+        const durationMins = parseInt("{{ meeting.duration }}") || 60;
+        let timeRemaining = durationMins * 60; // in seconds
+
+        // Start Countdown Timer
+        function startTimer() {
+            const timerLabel = document.getElementById("countdown-timer");
+            const interval = setInterval(() => {
+                if (timeRemaining <= 0) {
+                    clearInterval(interval);
+                    timerLabel.innerText = "Session Ended";
+                    showToast("This mock session duration has expired.");
+                    return;
+                }
+                timeRemaining--;
+                const hrs = Math.floor(timeRemaining / 3600);
+                const mins = Math.floor((timeRemaining % 3600) / 60);
+                const secs = timeRemaining % 60;
+                
+                let timeStr = "Remaining: ";
+                if (hrs > 0) {
+                    timeStr += String(hrs).padStart(2, '0') + ":";
+                }
+                timeStr += String(mins).padStart(2, '0') + ":" + String(secs).padStart(2, '0');
+                timerLabel.innerText = timeStr;
+            }, 1000);
+        }
+
+        // Toggle Audio Mic
+        function toggleMic() {
+            micActive = !micActive;
+            const micBtn = document.getElementById("mic-btn");
+            const micIcon = document.getElementById("mic-icon");
+            const activeWaves = document.getElementById("active-waves");
+
+            if (micActive) {
+                micBtn.classList.remove("muted");
+                micBtn.title = "Mute Mic";
+                micIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />`;
+                activeWaves.style.opacity = "1";
+                showToast("Microphone unmuted");
+            } else {
+                micBtn.classList.add("muted");
+                micBtn.title = "Unmute Mic";
+                micIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zm12.414 0l2 2m0 0l2 2m-2-2l-2-2m2 2l2 2M15 11V5a3 3 0 116 0v6a3 3 0 01-3 3z" />`;
+                activeWaves.style.opacity = "0";
+                showToast("Microphone muted");
+            }
+        }
+
+        // Toggle Video Camera
+        function toggleCam() {
+            camActive = !camActive;
+            const camBtn = document.getElementById("cam-btn");
+            const camIcon = document.getElementById("cam-icon");
+            const avatar = document.getElementById("speaker-avatar");
+            const statusDot = document.getElementById("primary-status-dot");
+
+            if (camActive) {
+                camBtn.classList.remove("muted");
+                camBtn.title = "Stop Video";
+                camIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />`;
+                avatar.style.transform = "scale(1)";
+                statusDot.style.background = "var(--accent-green)";
+                showToast("Camera started");
+            } else {
+                camBtn.classList.add("muted");
+                camBtn.title = "Start Video";
+                camIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2zM3 3l18 18" />`;
+                avatar.style.transform = "scale(0.8)";
+                statusDot.style.background = "var(--accent-red)";
+                showToast("Camera stopped");
+            }
+        }
+
+        // Toggle Screen Sharing
+        function toggleShare() {
+            sharingActive = !sharingActive;
+            const shareBtn = document.getElementById("share-btn");
+            const shareView = document.getElementById("screenshare-view");
+            const avatarView = document.getElementById("active-user-avatar");
+            const activeSpeakerName = document.getElementById("active-speaker-name");
+
+            if (sharingActive) {
+                shareBtn.classList.add("active");
+                shareView.classList.add("active");
+                avatarView.style.opacity = "0";
+                
+                {% if role == 'host' %}
+                    document.getElementById("screenshare-label").innerText = "You are sharing your screen to the class";
+                {% else %}
+                    document.getElementById("screenshare-label").innerText = "{{ classroom.mentor_name }} is presenting";
+                {% endif %}
+                showToast("Screen sharing started");
+            } else {
+                shareBtn.classList.remove("active");
+                shareView.classList.remove("active");
+                avatarView.style.opacity = "1";
+                showToast("Screen sharing stopped");
+            }
+        }
+
+        // Toggle Chat Sidebar
+        function toggleChat() {
+            chatCollapsed = !chatCollapsed;
+            const chatPanel = document.getElementById("chat-panel");
+            const chatBtn = document.getElementById("chat-toggle-btn");
+
+            if (chatCollapsed) {
+                chatPanel.classList.add("collapsed");
+                chatBtn.classList.remove("active");
+            } else {
+                chatPanel.classList.remove("collapsed");
+                chatBtn.classList.add("active");
+                
+                // Scroll chat to bottom
+                setTimeout(() => {
+                    const chatBox = document.getElementById("chat-box");
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }, 100);
+            }
+        }
+
+        // Mute All (Host Only)
+        function muteAll() {
+            showToast("Muted all participants");
+            // Add a mock system message in chat
+            appendSystemMessage("Host muted all student microphones.");
+        }
+
+        // Notification System
+        function showToast(message) {
+            const toast = document.getElementById("toast-notification");
+            toast.innerText = message;
+            toast.classList.add("show");
+            setTimeout(() => {
+                toast.classList.remove("show");
+            }, 3000);
+        }
+
+        // Add Message to Chat Box
+        function appendChatMessage(name, text, isSelf) {
+            const chatBox = document.getElementById("chat-box");
+            const msgDiv = document.createElement("div");
+            msgDiv.className = "chat-msg" + (isSelf ? " self" : "");
+            
+            msgDiv.innerHTML = `
+                <span class="msg-meta">${name} &bull; Just now</span>
+                <div class="msg-bubble">${text}</div>
+            `;
+            
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function appendSystemMessage(text) {
+            const chatBox = document.getElementById("chat-box");
+            const msgDiv = document.createElement("div");
+            msgDiv.className = "chat-msg";
+            msgDiv.style.alignSelf = "center";
+            msgDiv.style.maxWidth = "90%";
+            msgDiv.innerHTML = `
+                <span class="msg-meta" style="justify-content: center;">System &bull; Just now</span>
+                <div class="msg-bubble" style="background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.15); color: #fca5a5; font-weight: 500; font-size: 0.8rem; text-align: center;">${text}</div>
+            `;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // Submit New Chat Message
+        function sendChatMessage(event) {
+            event.preventDefault();
+            const input = document.getElementById("chat-input");
+            const text = input.value.trim();
+            if (!text) return;
+
+            // Append self message
+            appendChatMessage("You", text, true);
+            input.value = "";
+
+            // Simulate classmate reply
+            simulateResponse(text);
+        }
+
+        // Automated smart replies for real interactivity
+        function simulateResponse(userText) {
+            const lowerText = userText.toLowerCase();
+            let replyText = "";
+            let sender = "";
+
+            if (lowerText.includes("hello") || lowerText.includes("hi")) {
+                sender = "Grace Peters";
+                replyText = "Hello! Nice to meet you.";
+            } else if (lowerText.includes("screen") || lowerText.includes("see")) {
+                sender = "Victor Eze";
+                replyText = "Yes, I can see the screen clearly! Ready for class.";
+            } else if (lowerText.includes("audio") || lowerText.includes("hear")) {
+                sender = "Amina Bello";
+                replyText = "Audio is very loud and clear on my end too.";
+            } else if (lowerText.includes("question") || lowerText.includes("ask") || lowerText.includes("how")) {
+                sender = "Oluwaseun John";
+                replyText = "Good question, I was wondering about that part too.";
+            } else {
+                const replies = [
+                    "Got it, thanks!",
+                    "Alright, makes sense.",
+                    "Awesome, thank you.",
+                    "Excellent! Following along."
+                ];
+                sender = ["Grace Peters", "Amina Bello", "Victor Eze", "Oluwaseun John"][Math.floor(Math.random() * 4)];
+                replyText = replies[Math.floor(Math.random() * replies.length)];
+            }
+
+            // Simulate delayed response
+            setTimeout(() => {
+                appendChatMessage(sender, replyText, false);
+            }, 1000 + Math.random() * 2000);
+        }
+
+        // Initial setup
+        window.onload = () => {
+            startTimer();
+            // Automatically scroll chat to bottom
+            const chatBox = document.getElementById("chat-box");
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
+    </script>
+</body>
+</html>

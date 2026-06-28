@@ -1,4 +1,4 @@
-﻿# Tektutors Flask Website + LMS
+# Tektutors Flask Website + LMS
 
 Marketing website and Learning Hub for Tektutors, built with Flask, Jinja templates, SQLite, Flask-Mail, and Zoho Meeting integration.
 
@@ -49,6 +49,7 @@ Set these environment variables before deploying:
 APP_ENV=production
 SECRET_KEY=<strong-random-secret>
 DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DATABASE
+DATABASE_CONNECT_TIMEOUT_SECONDS=10
 ADMIN_PASSWORD=<strong-admin-password>
 ADMIN_EMAIL=admin@tektutors.com.ng
 TRUST_PROXY_HEADERS=true
@@ -83,18 +84,25 @@ python scripts/check_deployment.py --check-db
 The checker validates production config, health checks, rendered CSRF tokens, CSRF rejection, writable runtime storage, and warns if the git worktree has uncommitted changes.
 ## Migrate SQLite Data to PostgreSQL
 
-Install dependencies, set `DATABASE_URL`, then run:
+Install dependencies and set `DATABASE_URL` to the PostgreSQL database you will deploy with, then run:
 
 ```powershell
 python migrate_sqlite_to_postgres.py
 ```
 
-By default, the migration reads `data/tektutors_lms.db`. To use another SQLite file:
+By default, the migration reads `data/tektutors_lms.db`. To import the current cPanel SQLite export from Downloads:
 
 ```powershell
-$env:SQLITE_DB_PATH="C:\path\to\tektutors_lms.db"
-python migrate_sqlite_to_postgres.py
+python migrate_sqlite_to_postgres.py --sqlite-db-path "C:\Users\hp\Downloads\tektutors_lms.db"
 ```
+
+If the PostgreSQL database was already initialized or seeded by the app, replace its LMS rows with the SQLite snapshot:
+
+```powershell
+python migrate_sqlite_to_postgres.py --sqlite-db-path "C:\Users\hp\Downloads\tektutors_lms.db" --replace-target
+```
+
+For production/cPanel deployment, keep `DATABASE_URL` in the hosting environment and run the migration once against that PostgreSQL database before routing traffic to the new app version.
 
 ## Optional Admin Utility
 
@@ -111,3 +119,4 @@ Email sending uses the configured SMTP environment variables.
 ```powershell
 waitress-serve --listen=0.0.0.0:8080 app:application
 ```
+

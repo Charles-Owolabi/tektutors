@@ -14,7 +14,7 @@ import threading
 from typing import Any
 from urllib.parse import urlparse
 
-from dotenv import load_dotenv
+from dotenv import dotenv_values, load_dotenv
 from flask import Flask, flash, g, jsonify, make_response, redirect, render_template, request, send_from_directory, session, url_for
 from flask_mail import Mail, Message
 from markupsafe import Markup, escape
@@ -32,7 +32,9 @@ except ImportError:  # PostgreSQL is optional for local SQLite development.
     dict_row = None  # type: ignore[assignment]
 
 BASE_DIR = Path(__file__).resolve().parent
-load_dotenv(BASE_DIR / ".env")
+ENV_FILE = BASE_DIR / ".env"
+PROJECT_ENV = dotenv_values(ENV_FILE) if ENV_FILE.exists() else {}
+load_dotenv(ENV_FILE, override=True)
 
 app = Flask(__name__)
 application = app
@@ -59,6 +61,8 @@ app.config["MAIL_DEFAULT_SENDER"] = (
 app.config["MAIL_TIMEOUT"] = int(os.environ.get("MAIL_TIMEOUT", 30))
 app.config["GA_TRACKING_ID"] = os.environ.get("GA_TRACKING_ID")
 app.config["MAX_CONTENT_LENGTH"] = int(os.environ.get("MAX_CONTENT_LENGTH", str(5 * 1024 * 1024)))
+app.config["MAINTENANCE_MODE"] = os.environ.get("MAINTENANCE_MODE", "false").strip().lower() in {"1", "true", "yes", "on"}
+app.config["MAINTENANCE_RETRY_AFTER"] = int(os.environ.get("MAINTENANCE_RETRY_AFTER", "3600"))
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"] = IS_PRODUCTION
@@ -75,8 +79,16 @@ NEWSLETTER_FILE = DATA_DIR / "newsletter_subscriptions.csv"
 REGISTRATION_FILE = DATA_DIR / "registration_submissions.csv"
 CAREERS_FILE = DATA_DIR / "careers_applications.csv"
 DATABASE_FILE = DATA_DIR / "tektutors_lms.db"
-DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL") or os.environ.get("POSTGRESQL_URL")
+DATABASE_URL = (
+    PROJECT_ENV.get("DATABASE_URL")
+    or PROJECT_ENV.get("POSTGRES_URL")
+    or PROJECT_ENV.get("POSTGRESQL_URL")
+    or os.environ.get("DATABASE_URL")
+    or os.environ.get("POSTGRES_URL")
+    or os.environ.get("POSTGRESQL_URL")
+)
 DATABASE_ENGINE = "postgresql" if DATABASE_URL else "sqlite"
+DATABASE_CONNECT_TIMEOUT_SECONDS = int(PROJECT_ENV.get("DATABASE_CONNECT_TIMEOUT_SECONDS") or os.environ.get("DATABASE_CONNECT_TIMEOUT_SECONDS", 10))
 UPLOADS_DIR = DATA_DIR / "uploads"
 MATERIALS_DIR = UPLOADS_DIR / "materials"
 SUBMISSIONS_DIR = UPLOADS_DIR / "submissions"
@@ -792,6 +804,7 @@ def postgres_query(query: str) -> tuple[str, bool]:
         sql = sql.rstrip().rstrip(";") + " RETURNING id"
         wants_lastrowid = True
 
+    sql = sql.replace("%", "%%")
     return sql.replace("?", "%s"), wants_lastrowid
 
 
@@ -850,11 +863,43 @@ class PostgresConnection:
         self._connection.close()
 
 
+def database_config_source() -> str:
+    if PROJECT_ENV.get("DATABASE_URL"):
+        return ".env:DATABASE_URL"
+    if PROJECT_ENV.get("POSTGRES_URL"):
+        return ".env:POSTGRES_URL"
+    if PROJECT_ENV.get("POSTGRESQL_URL"):
+        return ".env:POSTGRESQL_URL"
+    if os.environ.get("DATABASE_URL"):
+        return "environment:DATABASE_URL"
+    if os.environ.get("POSTGRES_URL"):
+        return "environment:POSTGRES_URL"
+    if os.environ.get("POSTGRESQL_URL"):
+        return "environment:POSTGRESQL_URL"
+    return "sqlite fallback"
+
+
+def database_config_summary() -> str:
+    if not DATABASE_URL:
+        return f"engine=sqlite file={DATABASE_FILE} source={database_config_source()}"
+
+    parsed = urlparse(DATABASE_URL)
+    host = parsed.hostname or "unknown"
+    port = parsed.port or 5432
+    database_name = parsed.path.lstrip("/") or "unknown"
+    return f"engine=postgresql host={host} port={port} database={database_name} source={database_config_source()}"
+
+
 def connect_db() -> Any:
     if DATABASE_ENGINE == "postgresql":
+        app.logger.info("Opening database connection: %s", database_config_summary())
         if psycopg is None or dict_row is None:
             raise RuntimeError("PostgreSQL support requires psycopg[binary]. Install requirements.txt first.")
-        connection = psycopg.connect(DATABASE_URL, row_factory=dict_row)
+        connection = psycopg.connect(
+            DATABASE_URL,
+            row_factory=dict_row,
+            connect_timeout=DATABASE_CONNECT_TIMEOUT_SECONDS,
+        )
         return PostgresConnection(connection)
 
     connection = sqlite3.connect(DATABASE_FILE)
@@ -1904,6 +1949,19 @@ def password_reset_expired(expires_at: str | None) -> bool:
 
 
 @app.before_request
+def show_maintenance_page() -> Any:
+    if not app.config.get("MAINTENANCE_MODE"):
+        return None
+
+    if request.endpoint in {"static", "healthz", "maintenance"}:
+        return None
+
+    response = make_response(render_template("maintenance.html"), 503)
+    response.headers["Retry-After"] = str(app.config["MAINTENANCE_RETRY_AFTER"])
+    return response
+
+
+@app.before_request
 def load_current_user() -> None:
     user_id = session.get("user_id")
     g.user = get_user_by_id(int(user_id)) if user_id else None
@@ -1970,8 +2028,13 @@ def login_required(role: str | tuple[str, ...] | list[str] | set[str] | None = N
     return decorator
 
 
-def format_iso_label(value: str, *, include_time: bool = True) -> str:
-    parsed = datetime.fromisoformat(value)
+def format_iso_label(value: str | None, *, include_time: bool = True) -> str:
+    if not value:
+        return "Not set"
+    try:
+        parsed = datetime.fromisoformat(str(value))
+    except (TypeError, ValueError):
+        return str(value)
     if include_time:
         return parsed.strftime("%b %d, %Y at %I:%M %p")
     return parsed.strftime("%b %d, %Y")
@@ -2141,7 +2204,7 @@ def attendance_progress_for_classroom(classroom_id: int, attendance_target: int 
         """
         SELECT
             COUNT(DISTINCT e.user_id) AS learner_count,
-            COUNT(DISTINCT CASE WHEN r.status IN ('present', 'late') THEN r.student_id || '-' || r.session_id END) AS attended_sessions
+            COUNT(DISTINCT CASE WHEN r.status IN ('present', 'late') THEN CAST(r.student_id AS TEXT) || '-' || CAST(r.session_id AS TEXT) END) AS attended_sessions
         FROM enrollments e
         LEFT JOIN attendance_sessions s ON s.classroom_id = e.classroom_id
         LEFT JOIN attendance_records r ON r.session_id = s.id AND r.student_id = e.user_id
@@ -2195,8 +2258,8 @@ def get_pending_course_feedback(user_id: int) -> dict[str, Any] | None:
             AND r.student_id = e.user_id
             AND r.status IN ('present', 'late')
         WHERE e.user_id = ?
-        GROUP BY c.id
-        HAVING attendance_count >= ?
+        GROUP BY c.id, mentor.name
+        HAVING COUNT(r.id) >= ?
         ORDER BY c.title ASC
         """,
         (user_id, min(FEEDBACK_MILESTONES)),
@@ -2229,7 +2292,7 @@ def get_lms_overview_stats() -> list[dict[str, str]]:
         """
         SELECT
             COUNT(s.id) AS submitted_count,
-            COUNT(DISTINCT e.user_id || '-' || a.id) AS expected_count
+            COUNT(DISTINCT CAST(e.user_id AS TEXT) || '-' || CAST(a.id AS TEXT)) AS expected_count
         FROM classrooms c
         LEFT JOIN enrollments e ON e.classroom_id = c.id
         LEFT JOIN assignments a ON a.classroom_id = c.id
@@ -2259,7 +2322,7 @@ def get_public_classrooms() -> list[dict[str, Any]]:
         JOIN users u ON u.id = c.mentor_id
         LEFT JOIN enrollments e ON e.classroom_id = c.id
         LEFT JOIN assignments a ON a.classroom_id = c.id
-        GROUP BY c.id
+        GROUP BY c.id, u.name
         ORDER BY c.title ASC
         """
     )
@@ -2268,6 +2331,17 @@ def get_public_classrooms() -> list[dict[str, Any]]:
         row["assignments_due"] = row.pop("assignment_count")
         row["mentor"] = row.pop("mentor_name")
     return rows
+
+
+def rewrite_meeting_links_if_mock(meeting: dict[str, Any]) -> None:
+    meeting_key = str(meeting.get("meeting_key") or "")
+    if meeting_key.startswith("mock-") or "key=mock-" in str(meeting.get("start_link") or "") or "key=mock-" in str(meeting.get("join_link") or ""):
+        try:
+            base_url = request.url_root.rstrip("/")
+        except RuntimeError:
+            base_url = f"https://{MAIL_DOMAIN}"
+        meeting["start_link"] = f"{base_url}/lms/meeting/mock/{meeting_key}?role=host"
+        meeting["join_link"] = f"{base_url}/lms/meeting/mock/{meeting_key}?role=student"
 
 
 def get_upcoming_meetings_for_user(user_id: int, role: str) -> list[dict[str, Any]]:
@@ -2302,6 +2376,7 @@ def get_upcoming_meetings_for_user(user_id: int, role: str) -> list[dict[str, An
     upcoming_meetings = []
     now_val = datetime.now(tz=UTC)
     for meeting in meetings:
+        rewrite_meeting_links_if_mock(meeting)
         try:
             start_dt = datetime.fromisoformat(meeting["start_time"])
             duration_delta = timedelta(minutes=int(meeting["duration"]))
@@ -2347,7 +2422,7 @@ def get_student_dashboard_data(user_id: int) -> dict[str, Any]:
         LEFT JOIN materials m ON m.classroom_id = c.id
         LEFT JOIN submissions s ON s.assignment_id = a.id AND s.student_id = e.user_id
         WHERE e.user_id = ?
-        GROUP BY c.id
+        GROUP BY c.id, u.name
         ORDER BY c.title ASC
         """,
         (user_id,),
@@ -2616,7 +2691,7 @@ def get_admin_dashboard_data() -> dict[str, Any]:
         LEFT JOIN assignments a ON a.classroom_id = c.id
         LEFT JOIN materials m ON m.classroom_id = c.id
         LEFT JOIN submissions s ON s.assignment_id = a.id
-        GROUP BY c.id
+        GROUP BY c.id, u.name
         ORDER BY c.title ASC
         """
     )
@@ -2690,7 +2765,7 @@ def get_admin_dashboard_data() -> dict[str, Any]:
         FROM course_feedback f
         JOIN classrooms c ON c.id = f.classroom_id
         JOIN users mentor ON mentor.id = c.mentor_id
-        GROUP BY c.id
+        GROUP BY c.id, mentor.name
         ORDER BY average_score ASC, c.title ASC
         """
     )
@@ -2767,7 +2842,7 @@ def get_classroom_for_user(slug: str, user: dict[str, Any]) -> dict[str, Any] | 
         JOIN users u ON u.id = c.mentor_id
         LEFT JOIN enrollments e ON e.classroom_id = c.id
         WHERE c.slug = ?
-        GROUP BY c.id
+        GROUP BY c.id, u.name, u.email
         """,
         (slug,),
     )
@@ -3045,7 +3120,7 @@ def get_classroom_for_user(slug: str, user: dict[str, Any]) -> dict[str, Any] | 
         JOIN users creator ON creator.id = s.created_by
         LEFT JOIN attendance_records r ON r.session_id = s.id
         WHERE s.classroom_id = ?
-        GROUP BY s.id
+        GROUP BY s.id, creator.name
         ORDER BY s.session_date DESC, s.created_at DESC
         """,
         (int(classroom["id"]),),
@@ -3126,6 +3201,7 @@ def get_classroom_for_user(slug: str, user: dict[str, Any]) -> dict[str, Any] | 
 
     now_val = datetime.now(tz=UTC)
     for session in live_sessions:
+        rewrite_meeting_links_if_mock(session)
         try:
             start_dt = datetime.fromisoformat(session["start_time"])
             duration_delta = timedelta(minutes=int(session["duration"]))
@@ -4627,6 +4703,13 @@ def create_classroom_meeting(slug: str):
         flash("Failed to schedule Zoho Meeting. Check your API credentials and try again.", "error")
         return redirect(url_for("lms_classroom", slug=slug))
 
+    join_link = meeting_info["joinLink"]
+    start_link = meeting_info["startLink"]
+    if join_link.startswith("/"):
+        join_link = request.url_root.rstrip("/") + join_link
+    if start_link.startswith("/"):
+        start_link = request.url_root.rstrip("/") + start_link
+
     db = get_db()
     try:
         db.execute(
@@ -4643,8 +4726,8 @@ def create_classroom_meeting(slug: str):
                 agenda or None,
                 start_time_normalized,
                 duration_mins,
-                meeting_info["joinLink"],
-                meeting_info["startLink"],
+                join_link,
+                start_link,
                 timestamp_now()
             )
         )
@@ -4840,6 +4923,40 @@ def lms_classroom(slug: str):
         meta_description=f"Inside {classroom['title']}: class stream, assignments, modules, and learner progress.",
         active_page="lms",
         classroom=classroom,
+    )
+
+
+@app.route("/lms/meeting/mock/<meeting_key>")
+@login_required()
+def mock_meeting(meeting_key: str):
+    db = get_db()
+    meeting = db.execute(
+        """
+        SELECT s.*, c.title AS classroom_title, c.slug AS classroom_slug
+        FROM live_sessions s
+        JOIN classrooms c ON c.id = s.classroom_id
+        WHERE s.meeting_key = ?
+        """,
+        (meeting_key,)
+    ).fetchone()
+
+    if not meeting:
+        flash("This meeting does not exist.", "error")
+        return redirect(url_for("dashboard"))
+
+    classroom = get_classroom_for_user(meeting["classroom_slug"], g.user)
+    if classroom is None:
+        flash("You do not have permission to join this session.", "error")
+        return redirect(url_for("dashboard"))
+
+    role = request.args.get("role", "student")
+    return render_template(
+        "mock_meeting.html",
+        meeting=meeting,
+        role=role,
+        classroom=classroom,
+        page_title=f"Live Session: {meeting['topic']}",
+        active_page="lms"
     )
 
 
@@ -5575,6 +5692,13 @@ def healthz():
     return jsonify({"status": "ok", "environment": APP_ENV}), 200
 
 
+@app.get("/maintenance")
+def maintenance():
+    response = make_response(render_template("maintenance.html"), 503)
+    response.headers["Retry-After"] = str(app.config["MAINTENANCE_RETRY_AFTER"])
+    return response
+
+
 def should_send_meeting_reminder(start_time: str, now_value: datetime | None = None) -> bool:
     start_dt = datetime.fromisoformat(start_time)
     now_dt = now_value or datetime.now(tz=UTC)
@@ -5818,6 +5942,7 @@ def check_and_send_meeting_reminders() -> None:
         for row in rows:
             try:
                 meeting_dict = dict(row)
+                rewrite_meeting_links_if_mock(meeting_dict)
                 if should_send_meeting_reminder(meeting_dict["start_time"]):
                     sent_count = send_meeting_reminder_email(meeting_dict)
 

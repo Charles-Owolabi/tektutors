@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#1B2475">
+    <title>Tektutors | Maintenance</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css', v='20260627-maintenance') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/site_logo.png') }}">
+</head>
+<body class="maintenance-page">
+    <main class="maintenance-shell" aria-labelledby="maintenance-title">
+        <img
+            src="{{ url_for('static', filename='images/tektutors-logo.svg') }}"
+            alt="Tektutors"
+            class="maintenance-logo"
+            width="1100"
+            height="300"
+        >
+        <p class="kicker">Temporary maintenance</p>
+        <h1 id="maintenance-title">We are updating the learning experience.</h1>
+        <p>
+            Tektutors is temporarily unavailable while we fix an issue. Please check back soon.
+        </p>
+        <a class="btn btn-primary" href="mailto:info@tektutors.com.ng">Contact support</a>
+    </main>
+</body>
+</html>
