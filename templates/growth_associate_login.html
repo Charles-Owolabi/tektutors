@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="section py-5 bg-light">
+    <div class="container">
+        <div class="auth-shell">
+            <div class="auth-card-modern">
+                <div class="auth-header-strip">
+                    <div class="auth-icon-bubble">🔑</div>
+                    <h2>Growth Associate Sign In</h2>
+                    <p>Enter your credentials to access your partner referral CRM portal.</p>
+                </div>
+
+                <div class="auth-body">
+                    <form action="{{ url_for('growth_associate_login') }}" method="post">
+                        {{ csrf_field() }}
+
+                        <div class="form-group">
+                            <label for="email">Email Address <span class="required-star">*</span></label>
+                            <input type="email" id="email" name="email" class="form-control" placeholder="your.name@example.com" required autofocus>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label for="password" class="mb-0">Password <span class="required-star">*</span></label>
+                                <a href="{{ url_for('forgot_password') }}" class="small text-primary font-weight-bold">Forgot password?</a>
+                            </div>
+                            <input type="password" id="password" name="password" class="form-control" placeholder="Enter your password" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block btn-lg">Sign In to Partner Portal</button>
+                    </form>
+                </div>
+
+                <div class="auth-footer-box">
+                    <p class="mb-0 text-muted">
+                        Not a Growth Associate yet?
+                        <a href="{{ url_for('growth_associate_register') }}" class="font-weight-bold text-primary">Apply as a Growth Associate →</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

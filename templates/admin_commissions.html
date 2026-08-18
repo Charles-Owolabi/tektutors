@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <p class="kicker">TekTutors Finance & Administration</p>
+            <h2>Growth Associate Commission Approvals & Payouts</h2>
+        </div>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-light">Back to LMS Admin</a>
+    </div>
+
+    <!-- Overview Stats -->
+    <div class="kpi-grid mb-4">
+        <div class="kpi-card">
+            <span class="kpi-label">Pending Review</span>
+            <span class="kpi-value text-warning">₦{{ "{:,.2f}".format(kpis.pending_commissions) }}</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-label">Approved Payouts</span>
+            <span class="kpi-value text-primary">₦{{ "{:,.2f}".format(kpis.approved_commissions) }}</span>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-label">Total Commission Paid</span>
+            <span class="kpi-value text-success font-weight-bold">₦{{ "{:,.2f}".format(kpis.paid_commissions) }}</span>
+        </div>
+    </div>
+
+    <div class="card p-4">
+        {% if commissions %}
+        <div class="table-responsive">
+            <table class="table-styled">
+                <thead>
+                    <tr>
+                        <th>Referral ID</th>
+                        <th>Prospect</th>
+                        <th>Associate & Bank Info</th>
+                        <th>Commission Amount</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in commissions %}
+                    <tr>
+                        <td>
+                            <strong class="font-mono">{{ c.referral_id }}</strong><br>
+                            <small class="text-muted">Prospect Status: {{ c.prospect_status }}</small>
+                        </td>
+                        <td>
+                            <strong>{{ c.prospect_name }}</strong>
+                            {% if c.organization %}<br><small class="text-muted">{{ c.organization }}</small>{% endif %}
+                        </td>
+                        <td>
+                            <strong>{{ c.associate_name }}</strong><br>
+                            <small>{{ c.associate_email }}</small>
+                            {% if c.bank_name %}
+                            <br><small class="text-success font-weight-bold">{{ c.bank_name }} - {{ c.account_number }} ({{ c.account_name }})</small>
+                            {% else %}
+                            <br><small class="text-danger text-warning font-weight-bold" style="color: #dc2626 !important;">⚠️ No bank details provided</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong class="font-mono text-success">₦{{ "{:,.2f}".format(c.commission_amount or 0) }}</strong>
+                        </td>
+                        <td>
+                            <span class="status-badge status-{{ c.commission_status|lower|replace(' ', '-') }}">
+                                {{ c.commission_status }}
+                            </span>
+                            <br><small class="text-muted">Approval: {{ c.payment_approval_status or 'Unapproved' }}</small>
+                        </td>
+                        <td>
+                            <div class="d-flex flex-column gap-1">
+                                {% if c.commission_status != 'Approved' and c.commission_status != 'Paid' %}
+                                <form action="{{ url_for('admin_commissions') }}" method="post" class="d-flex gap-1">
+                                    {{ csrf_field() }}
+                                    <input type="hidden" name="commission_id" value="{{ c.id }}">
+                                    <input type="hidden" name="action" value="approve">
+                                    <input type="number" name="amount" value="{{ c.commission_amount or 0 }}" class="form-control form-control-sm" style="width: 100px;" placeholder="₦" step="1000">
+                                    <button type="submit" class="btn btn-sm btn-success py-0">Approve</button>
+                                </form>
+                                {% endif %}
+
+                                {% if c.commission_status == 'Approved' %}
+                                <form action="{{ url_for('admin_commissions') }}" method="post">
+                                    {{ csrf_field() }}
+                                    <input type="hidden" name="commission_id" value="{{ c.id }}">
+                                    <input type="hidden" name="action" value="mark_paid">
+                                    <button type="submit" class="btn btn-sm btn-primary">Mark as Paid</button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center p-4">No commissions recorded yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

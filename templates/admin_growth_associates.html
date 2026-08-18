@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <p class="kicker">TekTutors CRM Administration</p>
+            <h2>Growth Associate Applications & Accounts</h2>
+        </div>
+        <div>
+            <a href="{{ url_for('admin_export_reports', type='associates') }}" class="btn btn-secondary">📥 Export Associates CSV</a>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-light">Back to LMS Admin</a>
+        </div>
+    </div>
+
+    <!-- Filter band -->
+    <div class="card p-3 mb-4">
+        <form method="get" action="{{ url_for('admin_growth_associates') }}" class="d-flex gap-2">
+            <select name="status" class="form-control" style="max-width: 250px;">
+                <option value="">-- Filter All Statuses --</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending Approval</option>
+                <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+                <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                <option value="suspended" {% if status_filter == 'suspended' %}selected{% endif %}>Suspended</option>
+            </select>
+            <button type="submit" class="btn btn-secondary">Filter</button>
+            <a href="{{ url_for('admin_growth_associates') }}" class="btn btn-light">Reset</a>
+        </form>
+    </div>
+
+    <div class="card p-4">
+        {% if associates %}
+        <div class="table-responsive">
+            <table class="table-styled">
+                <thead>
+                    <tr>
+                        <th>Associate Name</th>
+                        <th>Email & Phone</th>
+                        <th>Occupation & Location</th>
+                        <th>Registered Date</th>
+                        <th>Status</th>
+                        <th>Admin Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in associates %}
+                    <tr>
+                        <td><strong>{{ a.name }}</strong></td>
+                        <td>
+                            {{ a.email }}<br>
+                            <small class="text-muted">{{ a.phone_number }}</small>
+                        </td>
+                        <td>
+                            {{ a.current_occupation }}<br>
+                            <small class="text-muted">{{ a.location }}</small>
+                        </td>
+                        <td>{{ a.created_at[:10] }}</td>
+                        <td>
+                            {% if a.is_suspended %}
+                            <span class="status-badge status-suspended">Suspended</span>
+                            {% elif a.is_approved %}
+                            <span class="status-badge status-approved">Approved</span>
+                            {% elif a.profile_status == 'rejected' %}
+                            <span class="status-badge status-rejected">Rejected</span>
+                            {% else %}
+                            <span class="status-badge status-under-review">Pending Approval</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                {% if not a.is_approved and a.profile_status != 'rejected' %}
+                                <form action="{{ url_for('admin_growth_associate_status', user_id=a.user_id) }}" method="post" style="display:inline;">
+                                    {{ csrf_field() }}
+                                    <input type="hidden" name="status" value="approve">
+                                    <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                </form>
+                                <form action="{{ url_for('admin_growth_associate_status', user_id=a.user_id) }}" method="post" style="display:inline;">
+                                    {{ csrf_field() }}
+                                    <input type="hidden" name="status" value="reject">
+                                    <button type="submit" class="btn btn-sm btn-danger">Reject</button>
+                                </form>
+                                {% elif a.is_suspended %}
+                                <form action="{{ url_for('admin_growth_associate_status', user_id=a.user_id) }}" method="post" style="display:inline;">
+                                    {{ csrf_field() }}
+                                    <input type="hidden" name="status" value="reactivate">
+                                    <button type="submit" class="btn btn-sm btn-success">Reactivate</button>
+                                </form>
+                                {% elif a.is_approved %}
+                                <form action="{{ url_for('admin_growth_associate_status', user_id=a.user_id) }}" method="post" style="display:inline;">
+                                    {{ csrf_field() }}
+                                    <input type="hidden" name="status" value="suspend">
+                                    <button type="submit" class="btn btn-sm btn-warning">Suspend</button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center p-4">No Growth Associates found matching the selected filter.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

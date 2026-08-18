@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Partner Hero Section -->
+<section class="partner-hero">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <div class="partner-hero-badge">
+                    <span>✨ Official TekTutors Partner Network</span>
+                </div>
+                <h1>Turn Your Professional Network Into High-Yield Revenue</h1>
+                <p class="partner-hero-lead">
+                    Connect ambitious individuals, professionals, and organizations to Africa's premier one-on-one data analytics mentorship. Earn competitive commissions on every converted referral.
+                </p>
+
+                <div class="feature-pill-strip">
+                    <span class="feature-pill">⚡ Direct Bank Payouts</span>
+                    <span class="feature-pill">📊 Real-Time CRM Tracking</span>
+                    <span class="feature-pill">🛡️ Zero Initial Investment</span>
+                    <span class="feature-pill">📄 Corporate Proposal Support</span>
+                </div>
+
+                <div class="d-flex gap-3 flex-wrap">
+                    <a href="{{ url_for('growth_associate_register') }}" class="btn btn-primary btn-lg">🚀 Apply as Growth Associate (Free)</a>
+                    <a href="{{ url_for('growth_associate_login') }}" class="btn btn-secondary btn-lg">🔑 Associate Portal Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Why Join Section -->
+<section class="section py-4 bg-light">
+    <div class="container">
+        <div class="section-header text-center max-width-700 mx-auto mb-4">
+            <p class="kicker text-primary">Program Benefits</p>
+            <h2 class="font-weight-bold">Why Partner With TekTutors?</h2>
+            <p class="lead text-muted mb-0">We handle the technical training delivery, curriculum, and mentorship. You simply introduce interested prospects and get paid.</p>
+        </div>
+
+        <div class="benefit-card-grid">
+            <div class="benefit-card">
+                <div class="benefit-icon-bubble">💰</div>
+                <h3 class="h4 font-weight-bold">Competitive Payouts</h3>
+                <p class="text-muted mb-0">Earn lucrative referral fees on every enrolled student or corporate training contract.</p>
+            </div>
+
+            <div class="benefit-card">
+                <div class="benefit-icon-bubble">📈</div>
+                <h3 class="h4 font-weight-bold">Transparent CRM Portal</h3>
+                <p class="text-muted mb-0">Real-time pipeline dashboard to monitor your leads from initial submission to commission payment.</p>
+            </div>
+
+            <div class="benefit-card">
+                <div class="benefit-icon-bubble">🤝</div>
+                <h3 class="h4 font-weight-bold">Mentor Callback Support</h3>
+                <p class="text-muted mb-0">Request senior TekTutors mentors to call your prospects and answer technical questions on your behalf.</p>
+            </div>
+
+            <div class="benefit-card">
+                <div class="benefit-icon-bubble">🏢</div>
+                <h3 class="h4 font-weight-bold">Corporate Proposal Drafting</h3>
+                <p class="text-muted mb-0">Referring a company or institution? Our team will prepare custom PDF pitch proposals for your deal.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Who You Can Refer Section -->
+<section class="section py-4">
+    <div class="container">
+        <div class="section-header text-center max-width-700 mx-auto mb-4">
+            <p class="kicker text-primary">High-Demand Target Audiences</p>
+            <h2 class="font-weight-bold">Who Can You Refer?</h2>
+            <p class="lead text-muted mb-0">TekTutors provides customized training in Excel, Power BI, SQL, Python, R, Data Analytics, and AI.</p>
+        </div>
+
+        <div class="benefit-card-grid">
+            <div class="benefit-card">
+                <div class="benefit-icon-bubble" style="background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);">👨‍💻</div>
+                <h3 class="h4 font-weight-bold mb-2">Individuals & Professionals</h3>
+                <p class="text-muted mb-2">Working professionals, university graduates, and career switchers looking to break into Data Analytics, BI, or Data Science.</p>
+                <ul class="text-muted small pl-3 mb-0">
+                    <li>One-on-One Mentorship</li>
+                    <li>Flexible Weekend & Evening Schedules</li>
+                    <li>Practical Portfolio Projects</li>
+                </ul>
+            </div>
+
+            <div class="benefit-card">
+                <div class="benefit-icon-bubble" style="background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);">🏢</div>
+                <h3 class="h4 font-weight-bold mb-2">Companies & Enterprises</h3>
+                <p class="text-muted mb-2">Corporates, banks, FinTechs, and SMEs needing custom staff upskilling in Business Intelligence and Executive Reporting.</p>
+                <ul class="text-muted small pl-3 mb-0">
+                    <li>Custom Enterprise Curriculum</li>
+                    <li>Onsite or Virtual Workshops</li>
+                    <li>Official Proposal & Invoicing</li>
+                </ul>
+            </div>
+
+            <div class="benefit-card">
+                <div class="benefit-icon-bubble" style="background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);">🎓</div>
+                <h3 class="h4 font-weight-bold mb-2">Schools, NGOs & Institutions</h3>
+                <p class="text-muted mb-2">Universities, secondary schools, churches, NGOs, and government bodies requiring structured digital skills development.</p>
+                <ul class="text-muted small pl-3 mb-0">
+                    <li>Cohort Group Discounts</li>
+                    <li>Certification Programs</li>
+                    <li>Dedicated Lead Trainer</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="section py-4 bg-light">
+    <div class="container">
+        <div class="section-header text-center max-width-700 mx-auto mb-4">
+            <p class="kicker text-primary">Simple & Transparent</p>
+            <h2 class="font-weight-bold">How The Partner Program Works</h2>
+        </div>
+
+        <div class="process-steps-grid-modern">
+            <div class="step-card-modern">
+                <span class="step-num-badge">1</span>
+                <h4 class="font-weight-bold">Register Online</h4>
+                <p class="text-muted mb-0">Fill out the quick Growth Associate application with your details and network background.</p>
+            </div>
+
+            <div class="step-card-modern">
+                <span class="step-num-badge">2</span>
+                <h4 class="font-weight-bold">Get Approved</h4>
+                <p class="text-muted mb-0">Our growth manager reviews and activates your secure Growth Associate dashboard.</p>
+            </div>
+
+            <div class="step-card-modern">
+                <span class="step-num-badge">3</span>
+                <h4 class="font-weight-bold">Submit Referrals</h4>
+                <p class="text-muted mb-0">Enter lead details into your portal. Built-in duplicate protection guarantees your lead ownership.</p>
+            </div>
+
+            <div class="step-card-modern">
+                <span class="step-num-badge">4</span>
+                <h4 class="font-weight-bold">Request Support</h4>
+                <p class="text-muted mb-0">Optionally request TekTutors mentors to call your lead or issue an official corporate training proposal.</p>
+            </div>
+
+            <div class="step-card-modern">
+                <span class="step-num-badge">5</span>
+                <h4 class="font-weight-bold">Track Conversion</h4>
+                <p class="text-muted mb-0">Watch your lead progress through our 8-stage pipeline from consultation to paid enrollment.</p>
+            </div>
+
+            <div class="step-card-modern">
+                <span class="step-num-badge">6</span>
+                <h4 class="font-weight-bold">Get Paid</h4>
+                <p class="text-muted mb-0">Receive approved commission payouts transferred directly into your verified bank account.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action Banner -->
+<section class="section py-4">
+    <div class="container">
+        <div class="partner-cta-card">
+            <h2 class="font-weight-bold text-white mb-3">Ready to Start Earning With Your Network?</h2>
+            <p class="lead text-white-50 mb-4 mx-auto" style="max-width: 650px;">Join TekTutors Growth Associates across Nigeria and beyond. Registration is fast, free, and takes under 2 minutes.</p>
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <a href="{{ url_for('growth_associate_register') }}" class="btn btn-light text-primary btn-lg font-weight-bold">🚀 Apply Now — Become a Partner</a>
+                <a href="{{ url_for('growth_associate_login') }}" class="btn btn-outline-light btn-lg">🔑 Sign In to Portal</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

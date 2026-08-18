@@ -16,9 +16,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css', v='20260616-dashboard-classroom-card-width') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css', v='20260818-contrast-mobile-red-warnings') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/site_logo.png') }}">
-    <script defer src="{{ url_for('static', filename='js/main.js', v='20260616-text-visibility-fixes') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/main.js', v='20260818-text-visibility-fixes') }}"></script>
 
     {% if ga_tracking_id %}
     <!-- Google tag (gtag.js) -->
@@ -132,6 +132,7 @@
                 <p><a href="{{ url_for('about') }}">About</a></p>
                 <p><a href="{{ url_for('programs') }}">Programs</a></p>
                 <p><a href="{{ lms_nav_url }}">Learning Hub</a></p>
+                <p><a href="{{ url_for('growth_associate_landing') }}">Partner Program</a></p>
                 <p><a href="{{ url_for('careers') }}">Careers</a></p>
                 <p><a href="{{ url_for('contact') }}">Contact</a></p>
                 <h3>Follow Us</h3>

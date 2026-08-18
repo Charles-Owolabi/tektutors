@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="ga-layout container my-4">
+    <aside class="ga-sidebar card p-3">
+        <nav class="ga-nav">
+            <a href="{{ url_for('growth_associate_dashboard') }}" class="ga-nav-link">Dashboard</a>
+            <a href="{{ url_for('growth_associate_prospect_new') }}" class="ga-nav-link text-primary font-weight-bold">+ Submit Prospect</a>
+            <a href="{{ url_for('growth_associate_prospects') }}" class="ga-nav-link">My Referrals</a>
+            <a href="{{ url_for('growth_associate_followups') }}" class="ga-nav-link active">Follow-ups</a>
+            <a href="{{ url_for('growth_associate_corporate') }}" class="ga-nav-link">Corporate Opportunities</a>
+            <a href="{{ url_for('growth_associate_proposals') }}" class="ga-nav-link">Proposals</a>
+            <a href="{{ url_for('growth_associate_payments') }}" class="ga-nav-link">Commissions & Payouts</a>
+            <a href="{{ url_for('growth_associate_profile') }}" class="ga-nav-link">Profile & Bank Details</a>
+            <a href="{{ url_for('growth_associate_help') }}" class="ga-nav-link">Help & FAQs</a>
+        </nav>
+    </aside>
+
+    <main class="ga-content">
+        <!-- New Followup Request Card -->
+        <div class="form-card-container mb-4">
+            <div class="card p-4">
+                <h2>Request Mentor Follow-up</h2>
+                <p class="text-muted">Request a senior TekTutors mentor or business representative to contact your prospect.</p>
+
+            {% if my_prospects %}
+            <form action="{{ url_for('growth_associate_followups') }}" method="post" class="form-styled">
+                {{ csrf_field() }}
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label for="prospect_id">Select Prospect *</label>
+                        <select id="prospect_id" name="prospect_id" class="form-control" required>
+                            <option value="">-- Choose Prospect --</option>
+                            {% for p in my_prospects %}
+                            <option value="{{ p.id }}">{{ p.full_name }} [{{ p.referral_id }}] - {{ p.organization or 'Individual' }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="preferred_contact_method">Preferred Contact Method</label>
+                        <select id="preferred_contact_method" name="preferred_contact_method" class="form-control">
+                            <option value="Phone Call">Phone Call</option>
+                            <option value="WhatsApp">WhatsApp</option>
+                            <option value="Email">Email</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label for="preferred_contact_time">Preferred Time Slot</label>
+                        <select id="preferred_contact_time" name="preferred_contact_time" class="form-control">
+                            <option value="Morning (9am - 12pm)">Morning (9am - 12pm)</option>
+                            <option value="Afternoon (12pm - 4pm)">Afternoon (12pm - 4pm)</option>
+                            <option value="Evening (4pm - 8pm)">Evening (4pm - 8pm)</option>
+                            <option value="Any time">Any time</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reason">Reason for Follow-up</label>
+                        <input type="text" id="reason" name="reason" class="form-control" placeholder="e.g. Needs course curriculum breakdown or group discount consultation">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="additional_instructions">Special Instructions for Mentor</label>
+                    <textarea id="additional_instructions" name="additional_instructions" class="form-control" rows="2" placeholder="Provide any specific talking points or prospect concerns."></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">+ Submit Follow-up Request</button>
+            </form>
+            {% else %}
+            <p class="text-muted">You do not have any submitted prospects yet. <a href="{{ url_for('growth_associate_prospect_new') }}">Submit a prospect first</a>.</p>
+            {% endif %}
+        </div>
+    </div>
+
+        <!-- Followup Tasks Table -->
+        <div class="card p-4">
+            <h4>My Follow-up Requests History</h4>
+            {% if followup_requests %}
+            <div class="table-responsive mt-3">
+                <table class="table-styled">
+                    <thead>
+                        <tr>
+                            <th>Prospect</th>
+                            <th>Contact Method</th>
+                            <th>Time Slot</th>
+                            <th>Requested Date</th>
+                            <th>Assigned Staff</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for f in followup_requests %}
+                        <tr>
+                            <td>
+                                <strong>{{ f.prospect_name }}</strong><br>
+                                <small class="font-mono text-muted">{{ f.referral_id }}</small>
+                            </td>
+                            <td>{{ f.preferred_contact_method }}</td>
+                            <td>{{ f.preferred_contact_time }}</td>
+                            <td>{{ f.requested_at[:10] }}</td>
+                            <td>{{ f.staff_name or 'Unassigned' }}</td>
+                            <td>
+                                <span class="status-badge status-{{ f.status|lower|replace(' ', '-') }}">{{ f.status }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted mt-2">No follow-up requests submitted yet.</p>
+            {% endif %}
+        </div>
+    </main>
+</div>
+{% endblock %}

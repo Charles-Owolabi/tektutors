@@ -1,0 +1,27 @@
+DATABASE_ENGINE=sqlite
+DATABASE_URL_SET=False
+DATABASE_URL_SUMMARY=not_set
+DB_CONNECTION=OK
+TABLE_users_COUNT=16
+TABLE_classrooms_COUNT=8
+TABLE_enrollments_COUNT=13
+TABLE_assignments_COUNT=25
+TABLE_live_sessions_COUNT=2
+USERS_SAMPLE_START
+id=1 email=student@tektutors.com.ng role=student approved=1 suspended=0 must_change=0 has_hash=1
+id=2 email=amina@tektutors.com.ng role=student approved=1 suspended=0 must_change=0 has_hash=1
+id=3 email=victor@tektutors.com.ng role=student approved=1 suspended=0 must_change=0 has_hash=1
+id=4 email=grace@tektutors.com.ng role=student approved=1 suspended=0 must_change=0 has_hash=1
+id=5 email=ada.nwosu@tektutors.com.ng role=mentor approved=1 suspended=0 must_change=1 has_hash=1
+id=6 email=michael.bassey@tektutors.com.ng role=mentor approved=1 suspended=0 must_change=1 has_hash=1
+id=7 email=chidinma.ude@tektutors.com.ng role=mentor approved=1 suspended=0 must_change=1 has_hash=1
+id=8 email=testlearner@example.com role=student approved=0 suspended=0 must_change=0 has_hash=1
+id=9 email=ctowolabi@gmail.com role=mentor approved=1 suspended=0 must_change=1 has_hash=1
+id=10 email=admin@tektutors.com.ng role=admin approved=1 suspended=0 must_change=0 has_hash=1
+id=11 email=lolatunde18@gmail.com role=mentor approved=1 suspended=0 must_change=0 has_hash=1
+id=13 email=ojebontop4real@gmail.com role=student approved=1 suspended=0 must_change=1 has_hash=1
+id=14 email=kehindefehintola@yahoo.co.uk role=student approved=1 suspended=0 must_change=0 has_hash=1
+id=15 email=omojadesolabalogun@gmail.com role=student approved=1 suspended=0 must_change=1 has_hash=1
+id=16 email=immaculeta99@gmail.com role=student approved=1 suspended=0 must_change=0 has_hash=1
+id=17 email=anielozie@yahoo.com role=student approved=1 suspended=0 must_change=0 has_hash=1
+USERS_SAMPLE_END

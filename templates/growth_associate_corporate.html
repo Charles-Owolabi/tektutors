@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="ga-layout container my-4">
+    <aside class="ga-sidebar card p-3">
+        <nav class="ga-nav">
+            <a href="{{ url_for('growth_associate_dashboard') }}" class="ga-nav-link">Dashboard</a>
+            <a href="{{ url_for('growth_associate_prospect_new') }}" class="ga-nav-link text-primary font-weight-bold">+ Submit Prospect</a>
+            <a href="{{ url_for('growth_associate_prospects') }}" class="ga-nav-link">My Referrals</a>
+            <a href="{{ url_for('growth_associate_followups') }}" class="ga-nav-link">Follow-ups</a>
+            <a href="{{ url_for('growth_associate_corporate') }}" class="ga-nav-link active">Corporate Opportunities</a>
+            <a href="{{ url_for('growth_associate_proposals') }}" class="ga-nav-link">Proposals</a>
+            <a href="{{ url_for('growth_associate_payments') }}" class="ga-nav-link">Commissions & Payouts</a>
+            <a href="{{ url_for('growth_associate_profile') }}" class="ga-nav-link">Profile & Bank Details</a>
+            <a href="{{ url_for('growth_associate_help') }}" class="ga-nav-link">Help & FAQs</a>
+        </nav>
+    </aside>
+
+    <main class="ga-content">
+        <div class="form-card-container mb-4">
+            <div class="card p-4">
+                <h2>Corporate & Institutional Opportunities</h2>
+                <p class="text-muted">Submit leads for companies, schools, churches, NGOs, or government institutions requiring customized group training.</p>
+
+            <form action="{{ url_for('growth_associate_corporate') }}" method="post" class="form-styled">
+                {{ csrf_field() }}
+
+                <h4 class="form-section-title">1. Organization Details</h4>
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label for="organization_name">Organization Name *</label>
+                        <input type="text" id="organization_name" name="organization_name" class="form-control" placeholder="e.g. Zenith Tech Solutions Ltd" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="organization_type">Organization Type *</label>
+                        <select id="organization_type" name="organization_type" class="form-control">
+                            <option value="Company / Business">Company / Business</option>
+                            <option value="School / University">School / University</option>
+                            <option value="Church / Religious Body">Church / Religious Body</option>
+                            <option value="NGO / Non-profit">NGO / Non-profit</option>
+                            <option value="Government Institution">Government Institution</option>
+                            <option value="Professional Association">Professional Association</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label for="website">Website URL</label>
+                        <input type="url" id="website" name="website" class="form-control" placeholder="https://www.example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="location">Location / Address</label>
+                        <input type="text" id="location" name="location" class="form-control" placeholder="Lagos, Nigeria">
+                    </div>
+                </div>
+
+                <h4 class="form-section-title mt-4">2. Contact Person</h4>
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label for="contact_person">Contact Person Name *</label>
+                        <input type="text" id="contact_person" name="contact_person" class="form-control" placeholder="e.g. Mrs. Funke Johnson" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact_position">Position / Job Title</label>
+                        <input type="text" id="contact_position" name="contact_position" class="form-control" placeholder="Head of People & Culture / Managing Director">
+                    </div>
+                </div>
+
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label for="contact_phone">Contact Phone Number *</label>
+                        <input type="tel" id="contact_phone" name="contact_phone" class="form-control" placeholder="+234 803 123 4567" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact_email">Contact Email Address *</label>
+                        <input type="email" id="contact_email" name="contact_email" class="form-control" placeholder="funke@company.com" required>
+                    </div>
+                </div>
+
+                <h4 class="form-section-title mt-4">3. Training Requirements</h4>
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label for="training_topic">Training Topic / Core Skill Required *</label>
+                        <input type="text" id="training_topic" name="training_topic" class="form-control" placeholder="e.g. Power BI & SQL for Executive Staff" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="participant_count">Number of Participants</label>
+                        <input type="number" id="participant_count" name="participant_count" class="form-control" value="10" min="1">
+                    </div>
+                </div>
+
+                <div class="grid grid-3">
+                    <div class="form-group">
+                        <label for="training_level">Target Skill Level</label>
+                        <select id="training_level" name="training_level" class="form-control">
+                            <option value="Beginner">Beginner</option>
+                            <option value="Intermediate" selected>Intermediate</option>
+                            <option value="Advanced">Advanced</option>
+                            <option value="Mixed Levels">Mixed Levels</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="delivery_mode">Delivery Mode</label>
+                        <select id="delivery_mode" name="delivery_mode" class="form-control">
+                            <option value="Online (Live Zoom/Teams)">Online (Live Zoom/Teams)</option>
+                            <option value="Physical Onsite">Physical Onsite</option>
+                            <option value="Hybrid">Hybrid</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="expected_duration">Expected Duration</label>
+                        <input type="text" id="expected_duration" name="expected_duration" class="form-control" placeholder="e.g. 3 Days Workshop / 4 Weeks Cohort">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="training_objectives">Training Objectives & Outcome Expectations</label>
+                    <textarea id="training_objectives" name="training_objectives" class="form-control" rows="2" placeholder="What key business outcome does the organization want to achieve?"></textarea>
+                </div>
+
+                <div class="form-group card p-3 bg-light">
+                    <label class="checkbox-label mb-0 font-weight-bold">
+                        <input type="checkbox" name="request_proposal" value="1" checked>
+                        <span>[ Request Official Training Proposal ] — TekTutors corporate team will prepare a formal pitch proposal document.</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg mt-3">+ Submit Corporate Opportunity</button>
+            </form>
+        </div>
+    </div>
+
+        <!-- Opportunities Table -->
+        <div class="card p-4">
+            <h4>Submitted Corporate Opportunities</h4>
+            {% if opportunities %}
+            <div class="table-responsive mt-3">
+                <table class="table-styled">
+                    <thead>
+                        <tr>
+                            <th>Organization</th>
+                            <th>Contact Person</th>
+                            <th>Topic & Participants</th>
+                            <th>Submitted</th>
+                            <th>Proposal Status</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for o in opportunities %}
+                        <tr>
+                            <td>
+                                <strong>{{ o.organization_name }}</strong><br>
+                                <small class="text-muted">{{ o.organization_type }}</small>
+                            </td>
+                            <td>
+                                {{ o.contact_person }}<br>
+                                <small class="text-muted">{{ o.contact_email }}</small>
+                            </td>
+                            <td>
+                                <strong>{{ o.training_topic }}</strong><br>
+                                <small class="text-muted">{{ o.participant_count }} participants ({{ o.delivery_mode }})</small>
+                            </td>
+                            <td>{{ o.submitted_at[:10] }}</td>
+                            <td>
+                                {% if o.proposal_requested %}
+                                <span class="badge badge-info">Proposal Requested</span>
+                                {% else %}
+                                <span class="text-muted">None</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="status-badge status-{{ o.status|lower|replace(' ', '-') }}">{{ o.status }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted mt-2">No corporate opportunities submitted yet.</p>
+            {% endif %}
+        </div>
+    </main>
+</div>
+{% endblock %}

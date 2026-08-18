@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="section">
+    <div class="container container-narrow">
+        {% if submitted %}
+        <div class="card text-center p-5 reveal">
+            <div class="card-icon text-success mb-3" style="font-size: 3rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <h2>Application Submitted Successfully!</h2>
+            <p class="lead text-muted mt-2">Thank you, <strong>{{ associate_name }}</strong>, for your interest in becoming a TekTutors Growth Associate.</p>
+            <div class="alert alert-info my-4 text-left">
+                <p class="m-0">Your application has been submitted and is currently <strong>awaiting administrator approval</strong>. Once approved, you will receive an email notification enabling you to log in and start submitting prospects.</p>
+            </div>
+            <div class="hero-actions justify-content-center">
+                <a href="{{ url_for('growth_associate_login') }}" class="btn btn-primary">Go to Login Screen</a>
+                <a href="{{ url_for('index') }}" class="btn btn-secondary">Return to Homepage</a>
+            </div>
+        </div>
+        {% else %}
+        <div class="form-header text-center mb-4">
+            <p class="kicker">TekTutors Partner Network</p>
+            <h2>Become a Growth Associate</h2>
+            <p class="text-muted">Fill out the form below to apply for the TekTutors Growth Associate network.</p>
+        </div>
+
+        <form class="card p-4 form-styled" action="{{ url_for('growth_associate_register') }}" method="post">
+            {{ csrf_field() }}
+
+            <h4 class="form-section-title">1. Personal Information</h4>
+            <div class="form-group">
+                <label for="name">Full Name <span class="required-star">*</span></label>
+                <input type="text" id="name" name="name" class="form-control" placeholder="e.g. Samuel Adebayo" required>
+            </div>
+
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label for="email">Email Address <span class="required-star">*</span></label>
+                    <input type="email" id="email" name="email" class="form-control" placeholder="samuel@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="phone_number">Phone Number <span class="required-star">*</span></label>
+                    <input type="tel" id="phone_number" name="phone_number" class="form-control" placeholder="+234 801 234 5678" required>
+                </div>
+            </div>
+
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label for="whatsapp_number">WhatsApp Number</label>
+                    <input type="tel" id="whatsapp_number" name="whatsapp_number" class="form-control" placeholder="+234 801 234 5678">
+                </div>
+                <div class="form-group">
+                    <label for="communication_channel">Preferred Contact Method</label>
+                    <select id="communication_channel" name="communication_channel" class="form-control">
+                        <option value="Email">Email</option>
+                        <option value="WhatsApp">WhatsApp</option>
+                        <option value="Phone Call">Phone Call</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label for="location">Location / City <span class="required-star">*</span></label>
+                    <input type="text" id="location" name="location" class="form-control" placeholder="Lagos, Port Harcourt, Abuja, etc." required>
+                </div>
+                <div class="form-group">
+                    <label for="country">Country <span class="required-star">*</span></label>
+                    <input type="text" id="country" name="country" class="form-control" value="Nigeria" required>
+                </div>
+            </div>
+
+            <h4 class="form-section-title mt-4">2. Professional Background & Network</h4>
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label for="current_occupation">Current Occupation / Role <span class="required-star">*</span></label>
+                    <input type="text" id="current_occupation" name="current_occupation" class="form-control" placeholder="Business Analyst, HR Specialist, Consultant, Student, etc." required>
+                </div>
+                <div class="form-group">
+                    <label for="company_name">Organization / Company</label>
+                    <input type="text" id="company_name" name="company_name" class="form-control" placeholder="Company or Institution name">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="linkedin_url">LinkedIn Profile URL</label>
+                <input type="url" id="linkedin_url" name="linkedin_url" class="form-control" placeholder="https://www.linkedin.com/in/yourprofile">
+            </div>
+
+            <div class="form-group">
+                <label for="network_areas">Areas of Professional Network</label>
+                <textarea id="network_areas" name="network_areas" class="form-control" rows="2" placeholder="e.g. Banking, Tech Hubs, University Alumni Associations, Corporate HRs"></textarea>
+            </div>
+
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label for="access_industries">Industries You Can Reach</label>
+                    <input type="text" id="access_industries" name="access_industries" class="form-control" placeholder="FinTech, FMCG, Oil & Gas, Healthcare, Education">
+                </div>
+                <div class="form-group">
+                    <label for="monthly_prospect_reach">Estimated Monthly Prospect Reach</label>
+                    <select id="monthly_prospect_reach" name="monthly_prospect_reach" class="form-control">
+                        <option value="1-5 prospects">1 - 5 prospects</option>
+                        <option value="5-15 prospects" selected>5 - 15 prospects</option>
+                        <option value="15-30 prospects">15 - 30 prospects</option>
+                        <option value="30+ prospects">30+ prospects</option>
+                    </select>
+                </div>
+            </div>
+
+            <h4 class="form-section-title mt-4">3. Security & Account Passwords</h4>
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label for="password">Password <span class="required-star">*</span></label>
+                    <input type="password" id="password" name="password" class="form-control" placeholder="Minimum 8 characters" required minlength="8">
+                </div>
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password <span class="required-star">*</span></label>
+                    <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="Re-enter password" required minlength="8">
+                </div>
+            </div>
+
+            <div class="form-group mt-3">
+                <label class="checkbox-card" style="border: 1px solid rgba(37, 99, 235, 0.2); background: rgba(37, 99, 235, 0.03);">
+                    <input type="checkbox" name="agreed_to_terms" value="1" required>
+                    <span>I agree to the TekTutors Growth Associate terms, referral policies, confidentiality requirements, and commission guidelines. <span class="required-star">*</span></span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block btn-lg mt-4">Submit Growth Associate Application</button>
+        </form>
+
+        <p class="text-center text-muted mt-3">Already registered? <a href="{{ url_for('growth_associate_login') }}">Sign in here</a>.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

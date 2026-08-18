@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="ga-layout container my-4">
+    <aside class="ga-sidebar card p-3">
+        <nav class="ga-nav">
+            <a href="{{ url_for('growth_associate_dashboard') }}" class="ga-nav-link">Dashboard</a>
+            <a href="{{ url_for('growth_associate_prospect_new') }}" class="ga-nav-link text-primary font-weight-bold">+ Submit Prospect</a>
+            <a href="{{ url_for('growth_associate_prospects') }}" class="ga-nav-link active">My Referrals</a>
+            <a href="{{ url_for('growth_associate_followups') }}" class="ga-nav-link">Follow-ups</a>
+            <a href="{{ url_for('growth_associate_corporate') }}" class="ga-nav-link">Corporate Opportunities</a>
+            <a href="{{ url_for('growth_associate_proposals') }}" class="ga-nav-link">Proposals</a>
+            <a href="{{ url_for('growth_associate_payments') }}" class="ga-nav-link">Commissions & Payouts</a>
+            <a href="{{ url_for('growth_associate_profile') }}" class="ga-nav-link">Profile & Bank Details</a>
+            <a href="{{ url_for('growth_associate_help') }}" class="ga-nav-link">Help & FAQs</a>
+        </nav>
+    </aside>
+
+    <main class="ga-content">
+        <div class="card p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <span class="kicker">Referral Details</span>
+                    <h2>{{ prospect.full_name }}</h2>
+                    <p class="text-muted">Referral ID: <strong class="font-mono">{{ prospect.referral_id }}</strong></p>
+                </div>
+                <div>
+                    <span class="status-badge status-{{ prospect.status|lower|replace(' ', '-') }} style-lg">
+                        {{ prospect.status }}
+                    </span>
+                </div>
+            </div>
+
+            <hr>
+
+            <div class="grid grid-3 gap-3 my-3">
+                <div>
+                    <small class="text-muted d-block">Contact Info</small>
+                    <strong>{{ prospect.email }}</strong><br>
+                    <span>{{ prospect.phone_number }}</span>
+                    {% if prospect.whatsapp_number %}<br><small class="text-muted">WhatsApp: {{ prospect.whatsapp_number }}</small>{% endif %}
+                </div>
+
+                <div>
+                    <small class="text-muted d-block">Organization & Role</small>
+                    <strong>{{ prospect.organization or 'Individual' }}</strong><br>
+                    <span>{{ prospect.job_title or 'N/A' }}</span><br>
+                    <small class="text-muted">{{ prospect.location }}, {{ prospect.country }}</small>
+                </div>
+
+                <div>
+                    <small class="text-muted d-block">Opportunity & Interest</small>
+                    <strong>{{ prospect.opportunity_type }}</strong><br>
+                    <span class="text-primary">{{ prospect.training_interests }}</span>
+                </div>
+            </div>
+
+            {% if prospect.prospect_details %}
+            <div class="p-3 bg-light rounded mt-3">
+                <small class="text-muted d-block font-weight-bold">Prospect Notes & Context:</small>
+                <p class="mb-0">{{ prospect.prospect_details }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Commission Status Card -->
+        <div class="card p-4 mb-4">
+            <h4>Commission & Payment Status</h4>
+            <div class="grid grid-3 gap-3 align-items-center mt-2">
+                <div>
+                    <small class="text-muted d-block">Commission Amount</small>
+                    <span class="h3 font-weight-bold text-success">
+                        {% if prospect.commission_amount and prospect.commission_amount > 0 %}
+                        ₦{{ "{:,.2f}".format(prospect.commission_amount) }}
+                        {% else %}
+                        ₦0.00 (Pending Conversion)
+                        {% endif %}
+                    </span>
+                </div>
+
+                <div>
+                    <small class="text-muted d-block">Commission Status</small>
+                    <span class="status-badge status-{{ (prospect.commission_status or 'pending')|lower|replace(' ', '-') }}">
+                        {{ prospect.commission_status or 'Pending Review' }}
+                    </span>
+                </div>
+
+                <div>
+                    <small class="text-muted d-block">Payment Approval Status</small>
+                    <strong>{{ prospect.payment_approval_status or 'Unapproved' }}</strong>
+                    {% if prospect.paid_at %}
+                    <br><small class="text-success">Paid on {{ prospect.paid_at[:10] }}</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Audit & Workflow History Timeline -->
+        <div class="card p-4">
+            <h4>Referral Progress Timeline</h4>
+            {% if audits %}
+            <ul class="timeline mt-3">
+                {% for a in audits %}
+                <li class="timeline-item">
+                    <div class="timeline-badge"></div>
+                    <div class="timeline-content">
+                        <strong>{{ a.action }}</strong>
+                        <span class="timeline-date">{{ a.timestamp[:19].replace('T', ' ') }}</span>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-muted my-3">Referral submitted on {{ prospect.submitted_at[:10] }}. Awaiting initial review.</p>
+            {% endif %}
+        </div>
+    </main>
+</div>
+{% endblock %}

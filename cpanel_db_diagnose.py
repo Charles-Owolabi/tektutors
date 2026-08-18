@@ -24,6 +24,10 @@ def main() -> None:
 
         write(f"DATABASE_ENGINE={app.DATABASE_ENGINE}")
         write(f"DATABASE_URL_SET={bool(app.DATABASE_URL)}")
+        if app.DATABASE_URL:
+            write(f"DATABASE_URL_SUMMARY={app.database_config_summary()}")
+        else:
+            write("DATABASE_URL_SUMMARY=not_set")
 
         db = app.connect_db()
         try:

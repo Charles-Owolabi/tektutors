@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="ga-layout container my-4">
+    <!-- Sidebar Navigation -->
+    <aside class="ga-sidebar card p-3">
+        <nav class="ga-nav">
+            <a href="{{ url_for('growth_associate_dashboard') }}" class="ga-nav-link">Dashboard</a>
+            <a href="{{ url_for('growth_associate_prospect_new') }}" class="ga-nav-link text-primary font-weight-bold">+ Submit Prospect</a>
+            <a href="{{ url_for('growth_associate_prospects') }}" class="ga-nav-link active">My Referrals</a>
+            <a href="{{ url_for('growth_associate_followups') }}" class="ga-nav-link">Follow-ups</a>
+            <a href="{{ url_for('growth_associate_corporate') }}" class="ga-nav-link">Corporate Opportunities</a>
+            <a href="{{ url_for('growth_associate_proposals') }}" class="ga-nav-link">Proposals</a>
+            <a href="{{ url_for('growth_associate_payments') }}" class="ga-nav-link">Commissions & Payouts</a>
+            <a href="{{ url_for('growth_associate_profile') }}" class="ga-nav-link">Profile & Bank Details</a>
+            <a href="{{ url_for('growth_associate_help') }}" class="ga-nav-link">Help & FAQs</a>
+        </nav>
+    </aside>
+
+    <main class="ga-content">
+        <div class="card p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h2 class="mb-0">My Prospects & Referrals</h2>
+                    <p class="text-muted mb-0">View, search, and track all submitted leads.</p>
+                </div>
+                <a href="{{ url_for('growth_associate_prospect_new') }}" class="btn btn-primary">+ Submit Prospect</a>
+            </div>
+
+            <!-- Filters -->
+            <form method="get" action="{{ url_for('growth_associate_prospects') }}" class="grid grid-3 gap-2 my-3">
+                <input type="text" name="q" value="{{ search_q }}" class="form-control" placeholder="Search name, ID, or company...">
+                <select name="status" class="form-control">
+                    <option value="">-- All Statuses --</option>
+                    <option value="Submitted" {% if status_filter == 'Submitted' %}selected{% endif %}>Submitted</option>
+                    <option value="Under Review" {% if status_filter == 'Under Review' %}selected{% endif %}>Under Review</option>
+                    <option value="Accepted" {% if status_filter == 'Accepted' %}selected{% endif %}>Accepted</option>
+                    <option value="Contacted" {% if status_filter == 'Contacted' %}selected{% endif %}>Contacted</option>
+                    <option value="Follow-up Requested" {% if status_filter == 'Follow-up Requested' %}selected{% endif %}>Follow-up Requested</option>
+                    <option value="Qualified" {% if status_filter == 'Qualified' %}selected{% endif %}>Qualified</option>
+                    <option value="Converted" {% if status_filter == 'Converted' %}selected{% endif %}>Converted</option>
+                    <option value="Commission Approved" {% if status_filter == 'Commission Approved' %}selected{% endif %}>Commission Approved</option>
+                    <option value="Commission Paid" {% if status_filter == 'Commission Paid' %}selected{% endif %}>Commission Paid</option>
+                </select>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-secondary flex-grow-1">Filter</button>
+                    <a href="{{ url_for('growth_associate_prospects') }}" class="btn btn-light">Reset</a>
+                </div>
+            </form>
+
+            {% if prospects %}
+            <div class="table-responsive">
+                <table class="table-styled">
+                    <thead>
+                        <tr>
+                            <th>Referral ID</th>
+                            <th>Prospect</th>
+                            <th>Opportunity Type</th>
+                            <th>Contact</th>
+                            <th>Submitted</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in prospects %}
+                        <tr>
+                            <td><span class="font-mono">{{ p.referral_id }}</span></td>
+                            <td>
+                                <strong>{{ p.full_name }}</strong>
+                                {% if p.organization %}<br><small class="text-muted">{{ p.organization }}</small>{% endif %}
+                            </td>
+                            <td>{{ p.opportunity_type }}</td>
+                            <td>
+                                <small>{{ p.email }}<br>{{ p.phone_number }}</small>
+                            </td>
+                            <td>{{ p.submitted_at[:10] }}</td>
+                            <td>
+                                <span class="status-badge status-{{ p.status|lower|replace(' ', '-') }}">{{ p.status }}</span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('growth_associate_prospect_detail', prospect_id=p.id) }}" class="btn btn-sm btn-secondary">View</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state text-center p-4">
+                <p class="text-muted">No referrals matched your search parameters.</p>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+</div>
+{% endblock %}

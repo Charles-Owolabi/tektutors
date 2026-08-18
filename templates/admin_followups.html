@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <p class="kicker">TekTutors CRM Administration</p>
+            <h2>Mentor Follow-up Tasks Dispatch</h2>
+        </div>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-light">Back to LMS Admin</a>
+    </div>
+
+    <div class="card p-4">
+        {% if followups %}
+        <div class="table-responsive">
+            <table class="table-styled">
+                <thead>
+                    <tr>
+                        <th>Prospect Contact</th>
+                        <th>Associate</th>
+                        <th>Method & Time</th>
+                        <th>Requested Date</th>
+                        <th>Assigned Staff</th>
+                        <th>Status</th>
+                        <th>Update Task</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in followups %}
+                    <tr>
+                        <td>
+                            <strong>{{ f.prospect_name }}</strong><br>
+                            <small>{{ f.prospect_phone }} | {{ f.prospect_email }}</small><br>
+                            <span class="font-mono text-muted">{{ f.referral_id }}</span>
+                        </td>
+                        <td>{{ f.associate_name }}</td>
+                        <td>
+                            <strong>{{ f.preferred_contact_method }}</strong><br>
+                            <small class="text-muted">{{ f.preferred_contact_time }}</small>
+                        </td>
+                        <td>{{ f.requested_at[:10] }}</td>
+                        <td>{{ f.staff_name or 'Unassigned' }}</td>
+                        <td>
+                            <span class="status-badge status-{{ f.status|lower|replace(' ', '-') }}">{{ f.status }}</span>
+                        </td>
+                        <td>
+                            <form action="{{ url_for('admin_followups') }}" method="post" class="d-flex flex-column gap-1">
+                                {{ csrf_field() }}
+                                <input type="hidden" name="request_id" value="{{ f.id }}">
+                                <select name="assigned_staff_id" class="form-control form-control-sm">
+                                    <option value="">-- Select Staff --</option>
+                                    {% for s in staff_members %}
+                                    <option value="{{ s.id }}" {% if f.assigned_staff_id == s.id %}selected{% endif %}>{{ s.name }} ({{ s.role }})</option>
+                                    {% endfor %}
+                                </select>
+                                <select name="status" class="form-control form-control-sm">
+                                    <option value="Requested" {% if f.status == 'Requested' %}selected{% endif %}>Requested</option>
+                                    <option value="Assigned" {% if f.status == 'Assigned' %}selected{% endif %}>Assigned</option>
+                                    <option value="In Progress" {% if f.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                    <option value="Completed" {% if f.status == 'Completed' %}selected{% endif %}>Completed</option>
+                                    <option value="Rescheduled" {% if f.status == 'Rescheduled' %}selected{% endif %}>Rescheduled</option>
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-primary py-0">Assign & Update</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center p-4">No follow-up requests currently pending.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="ga-layout container my-4">
+    <aside class="ga-sidebar card p-3">
+        <nav class="ga-nav">
+            <a href="{{ url_for('growth_associate_dashboard') }}" class="ga-nav-link">Dashboard</a>
+            <a href="{{ url_for('growth_associate_prospect_new') }}" class="ga-nav-link text-primary font-weight-bold">+ Submit Prospect</a>
+            <a href="{{ url_for('growth_associate_prospects') }}" class="ga-nav-link">My Referrals</a>
+            <a href="{{ url_for('growth_associate_followups') }}" class="ga-nav-link">Follow-ups</a>
+            <a href="{{ url_for('growth_associate_corporate') }}" class="ga-nav-link">Corporate Opportunities</a>
+            <a href="{{ url_for('growth_associate_proposals') }}" class="ga-nav-link active">Proposals</a>
+            <a href="{{ url_for('growth_associate_payments') }}" class="ga-nav-link">Commissions & Payouts</a>
+            <a href="{{ url_for('growth_associate_profile') }}" class="ga-nav-link">Profile & Bank Details</a>
+            <a href="{{ url_for('growth_associate_help') }}" class="ga-nav-link">Help & FAQs</a>
+        </nav>
+    </aside>
+
+    <main class="ga-content">
+        <div class="card p-4">
+            <h2>Corporate Training Proposals</h2>
+            <p class="text-muted">Track requested proposals prepared by the TekTutors corporate training team and download ready documents.</p>
+
+            {% if proposal_items %}
+            <div class="table-responsive mt-3">
+                <table class="table-styled">
+                    <thead>
+                        <tr>
+                            <th>Proposal Title</th>
+                            <th>Organization</th>
+                            <th>Requested Date</th>
+                            <th>Request Status</th>
+                            <th>Download Proposal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in proposal_items %}
+                        <tr>
+                            <td><strong>{{ item.title }}</strong></td>
+                            <td>{{ item.organization_name or 'N/A' }}</td>
+                            <td>{{ item.created_at[:10] }}</td>
+                            <td>
+                                <span class="status-badge status-{{ item.request_status|lower|replace(' ', '-') }}">
+                                    {{ item.request_status }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if item.proposal_id %}
+                                <a href="{{ url_for('growth_associate_proposal_download', proposal_id=item.proposal_id) }}" class="btn btn-sm btn-primary">
+                                    📥 Download Proposal ({{ item.original_name }})
+                                </a>
+                                {% else %}
+                                <span class="text-muted"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> In Preparation</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state text-center p-4">
+                <p class="text-muted">No proposal requests submitted yet. You can request a proposal when submitting a <a href="{{ url_for('growth_associate_corporate') }}">corporate opportunity</a>.</p>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+</div>
+{% endblock %}

@@ -34,10 +34,13 @@ except ImportError:  # PostgreSQL is optional for local SQLite development.
 BASE_DIR = Path(__file__).resolve().parent
 ENV_FILE = BASE_DIR / ".env"
 PROJECT_ENV = dotenv_values(ENV_FILE) if ENV_FILE.exists() else {}
-load_dotenv(ENV_FILE, override=True)
+load_dotenv(ENV_FILE, override=False)
 
 app = Flask(__name__)
 application = app
+# Enable automatic template reloading (works in dev and prod)
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.jinja_env.auto_reload = True
 APP_ENV = os.environ.get("APP_ENV", os.environ.get("FLASK_ENV", "development")).strip().lower() or "development"
 IS_PRODUCTION = APP_ENV == "production"
 TRUST_PROXY_HEADERS = os.environ.get("TRUST_PROXY_HEADERS", "true" if IS_PRODUCTION else "false").lower() == "true"
@@ -80,15 +83,15 @@ REGISTRATION_FILE = DATA_DIR / "registration_submissions.csv"
 CAREERS_FILE = DATA_DIR / "careers_applications.csv"
 DATABASE_FILE = DATA_DIR / "tektutors_lms.db"
 DATABASE_URL = (
-    PROJECT_ENV.get("DATABASE_URL")
-    or PROJECT_ENV.get("POSTGRES_URL")
-    or PROJECT_ENV.get("POSTGRESQL_URL")
-    or os.environ.get("DATABASE_URL")
+    os.environ.get("DATABASE_URL")
     or os.environ.get("POSTGRES_URL")
     or os.environ.get("POSTGRESQL_URL")
+    or PROJECT_ENV.get("DATABASE_URL")
+    or PROJECT_ENV.get("POSTGRES_URL")
+    or PROJECT_ENV.get("POSTGRESQL_URL")
 )
 DATABASE_ENGINE = "postgresql" if DATABASE_URL else "sqlite"
-DATABASE_CONNECT_TIMEOUT_SECONDS = int(PROJECT_ENV.get("DATABASE_CONNECT_TIMEOUT_SECONDS") or os.environ.get("DATABASE_CONNECT_TIMEOUT_SECONDS", 10))
+DATABASE_CONNECT_TIMEOUT_SECONDS = int(os.environ.get("DATABASE_CONNECT_TIMEOUT_SECONDS") or PROJECT_ENV.get("DATABASE_CONNECT_TIMEOUT_SECONDS") or 10)
 UPLOADS_DIR = DATA_DIR / "uploads"
 MATERIALS_DIR = UPLOADS_DIR / "materials"
 SUBMISSIONS_DIR = UPLOADS_DIR / "submissions"
@@ -139,10 +142,15 @@ FEEDBACK_RATING_FIELDS = [
     ("lms_ease", "Learning Hub ease of use"),
 ]
 FEEDBACK_MAX_SCORE = len(FEEDBACK_RATING_FIELDS) * 5
-PROJECT_UNLOCK_PROGRESS = 95
+PROJECT_UNLOCK_PROGRESS = 85
 MEETING_REMINDER_LEAD_TIME = timedelta(minutes=30)
 CHALLENGE_DUE_REMINDER_LEAD_TIME = timedelta(hours=24)
 MEETING_REMINDER_CHECK_INTERVAL_SECONDS = int(os.environ.get("MEETING_REMINDER_CHECK_INTERVAL_SECONDS", 60))
+ENABLE_BACKGROUND_SCHEDULER = (
+    os.environ.get("ENABLE_BACKGROUND_SCHEDULER")
+    or PROJECT_ENV.get("ENABLE_BACKGROUND_SCHEDULER")
+    or ("true" if not IS_PRODUCTION else "false")
+).lower() == "true"
 _meeting_reminder_scheduler_started = False
 DB_INTEGRITY_ERRORS: tuple[type[BaseException], ...] = (sqlite3.IntegrityError,)
 if psycopg is not None:
@@ -506,7 +514,7 @@ CREATE TABLE IF NOT EXISTS users (
     name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
-    role TEXT NOT NULL CHECK (role IN ('student', 'mentor', 'admin')),
+    role TEXT NOT NULL CHECK (role IN ('student', 'mentor', 'admin', 'growth_associate', 'growth_manager', 'corporate_staff', 'finance')),
     is_approved INTEGER NOT NULL DEFAULT 0,
     is_suspended INTEGER NOT NULL DEFAULT 0,
     suspended_at TEXT,
@@ -680,6 +688,27 @@ CREATE TABLE IF NOT EXISTS course_feedback (
     FOREIGN KEY (classroom_id) REFERENCES classrooms (id),
     FOREIGN KEY (student_id) REFERENCES users (id)
 );
+
+CREATE TABLE IF NOT EXISTS certificate_approvals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    classroom_id INTEGER NOT NULL,
+    student_id INTEGER NOT NULL,
+    approved_by INTEGER NOT NULL,
+    approved_at TEXT NOT NULL,
+    revoked_at TEXT,
+    revoked_by INTEGER,
+    UNIQUE(classroom_id, student_id),
+    FOREIGN KEY (classroom_id) REFERENCES classrooms (id),
+    FOREIGN KEY (student_id) REFERENCES users (id),
+    FOREIGN KEY (approved_by) REFERENCES users (id),
+    FOREIGN KEY (revoked_by) REFERENCES users (id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_enrollments_user_id ON enrollments(user_id);
+CREATE INDEX IF NOT EXISTS idx_classrooms_mentor_id ON classrooms(mentor_id);
+CREATE INDEX IF NOT EXISTS idx_submissions_student_id ON submissions(student_id);
+CREATE INDEX IF NOT EXISTS idx_attendance_records_student_id ON attendance_records(student_id);
+CREATE INDEX IF NOT EXISTS idx_live_sessions_classroom_id ON live_sessions(classroom_id);
 """
 
 
@@ -864,12 +893,23 @@ class PostgresConnection:
 
 
 def database_config_source() -> str:
+    # Check if system-wide environment variables are set and differ from local .env config
+    if os.environ.get("DATABASE_URL") and os.environ.get("DATABASE_URL") != PROJECT_ENV.get("DATABASE_URL"):
+        return "environment:DATABASE_URL"
+    if os.environ.get("POSTGRES_URL") and os.environ.get("POSTGRES_URL") != PROJECT_ENV.get("POSTGRES_URL"):
+        return "environment:POSTGRES_URL"
+    if os.environ.get("POSTGRESQL_URL") and os.environ.get("POSTGRESQL_URL") != PROJECT_ENV.get("POSTGRESQL_URL"):
+        return "environment:POSTGRESQL_URL"
+    
+    # Fallback to local .env file settings if present
     if PROJECT_ENV.get("DATABASE_URL"):
         return ".env:DATABASE_URL"
     if PROJECT_ENV.get("POSTGRES_URL"):
         return ".env:POSTGRES_URL"
     if PROJECT_ENV.get("POSTGRESQL_URL"):
         return ".env:POSTGRESQL_URL"
+    
+    # Fallback to general system environment variables
     if os.environ.get("DATABASE_URL"):
         return "environment:DATABASE_URL"
     if os.environ.get("POSTGRES_URL"):
@@ -892,7 +932,7 @@ def database_config_summary() -> str:
 
 def connect_db() -> Any:
     if DATABASE_ENGINE == "postgresql":
-        app.logger.info("Opening database connection: %s", database_config_summary())
+        app.logger.debug("Opening database connection: %s", database_config_summary())
         if psycopg is None or dict_row is None:
             raise RuntimeError("PostgreSQL support requires psycopg[binary]. Install requirements.txt first.")
         connection = psycopg.connect(
@@ -946,7 +986,7 @@ def ensure_admin_role_supported(db: Any) -> None:
         "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'users'"
     ).fetchone()
     table_sql = (table_sql_row["sql"] or "") if table_sql_row else ""
-    if "'admin'" in table_sql:
+    if "'growth_associate'" in table_sql:
         return
 
     db.execute("PRAGMA foreign_keys = OFF")
@@ -958,7 +998,7 @@ def ensure_admin_role_supported(db: Any) -> None:
             name TEXT NOT NULL,
             email TEXT NOT NULL UNIQUE,
             password_hash TEXT NOT NULL,
-            role TEXT NOT NULL CHECK (role IN ('student', 'mentor', 'admin')),
+            role TEXT NOT NULL CHECK (role IN ('student', 'mentor', 'admin', 'growth_associate', 'growth_manager', 'corporate_staff', 'finance')),
             is_approved INTEGER NOT NULL DEFAULT 0,
             is_suspended INTEGER NOT NULL DEFAULT 0,
             suspended_at TEXT,
@@ -1072,6 +1112,24 @@ def migrate_database_schema(db: Any) -> None:
         )
         """
     )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS certificate_approvals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            classroom_id INTEGER NOT NULL,
+            student_id INTEGER NOT NULL,
+            approved_by INTEGER NOT NULL,
+            approved_at TEXT NOT NULL,
+            revoked_at TEXT,
+            revoked_by INTEGER,
+            UNIQUE(classroom_id, student_id),
+            FOREIGN KEY (classroom_id) REFERENCES classrooms (id),
+            FOREIGN KEY (student_id) REFERENCES users (id),
+            FOREIGN KEY (approved_by) REFERENCES users (id),
+            FOREIGN KEY (revoked_by) REFERENCES users (id)
+        )
+        """
+    )
     ensure_column(db, "assignments", "assignment_type", "TEXT NOT NULL DEFAULT 'assignment'")
     ensure_column(db, "assignments", "challenge_reminder_sent", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(db, "users", "is_approved", "INTEGER NOT NULL DEFAULT 0")
@@ -1082,6 +1140,194 @@ def migrate_database_schema(db: Any) -> None:
     ensure_column(db, "classrooms", "course_duration", "TEXT NOT NULL DEFAULT '4 weeks'")
     ensure_column(db, "classrooms", "course_start_date", "TEXT")
     ensure_column(db, "live_sessions", "reminder_sent", "INTEGER NOT NULL DEFAULT 0")
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS growth_associate_profiles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL UNIQUE,
+            phone_number TEXT NOT NULL,
+            whatsapp_number TEXT,
+            location TEXT NOT NULL,
+            country TEXT NOT NULL DEFAULT 'Nigeria',
+            communication_channel TEXT NOT NULL DEFAULT 'Email',
+            current_occupation TEXT NOT NULL,
+            company_name TEXT,
+            linkedin_url TEXT,
+            network_areas TEXT,
+            access_industries TEXT,
+            monthly_prospect_reach TEXT,
+            agreed_to_terms INTEGER NOT NULL DEFAULT 1,
+            status TEXT NOT NULL DEFAULT 'pending',
+            bank_name TEXT,
+            account_number TEXT,
+            account_name TEXT,
+            payout_notes TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS prospects (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            referral_id TEXT NOT NULL UNIQUE,
+            growth_associate_id INTEGER NOT NULL,
+            full_name TEXT NOT NULL,
+            phone_number TEXT NOT NULL,
+            whatsapp_number TEXT,
+            email TEXT NOT NULL,
+            location TEXT,
+            country TEXT DEFAULT 'Nigeria',
+            organization TEXT,
+            job_title TEXT,
+            preferred_contact_method TEXT DEFAULT 'Phone Call',
+            opportunity_type TEXT NOT NULL,
+            training_interests TEXT NOT NULL,
+            prospect_details TEXT,
+            lead_temperature TEXT DEFAULT 'Warm',
+            estimated_value REAL DEFAULT 0.0,
+            status TEXT NOT NULL DEFAULT 'Submitted',
+            is_duplicate INTEGER DEFAULT 0,
+            duplicate_notes TEXT,
+            submitted_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (growth_associate_id) REFERENCES users (id)
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS follow_up_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            prospect_id INTEGER NOT NULL,
+            growth_associate_id INTEGER NOT NULL,
+            preferred_contact_method TEXT NOT NULL,
+            preferred_contact_time TEXT NOT NULL,
+            reason TEXT,
+            additional_instructions TEXT,
+            assigned_staff_id INTEGER,
+            status TEXT NOT NULL DEFAULT 'Requested',
+            internal_notes TEXT,
+            next_follow_up_date TEXT,
+            requested_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (prospect_id) REFERENCES prospects (id),
+            FOREIGN KEY (growth_associate_id) REFERENCES users (id),
+            FOREIGN KEY (assigned_staff_id) REFERENCES users (id)
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS corporate_opportunities (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            growth_associate_id INTEGER NOT NULL,
+            organization_name TEXT NOT NULL,
+            organization_type TEXT NOT NULL,
+            website TEXT,
+            location TEXT,
+            contact_person TEXT NOT NULL,
+            contact_position TEXT,
+            contact_phone TEXT NOT NULL,
+            contact_email TEXT NOT NULL,
+            training_topic TEXT NOT NULL,
+            skills_required TEXT,
+            participant_count INTEGER DEFAULT 1,
+            training_level TEXT DEFAULT 'Intermediate',
+            delivery_mode TEXT DEFAULT 'Online',
+            preferred_date TEXT,
+            expected_duration TEXT,
+            training_objectives TEXT,
+            additional_requirements TEXT,
+            identification_source TEXT,
+            expressed_interest TEXT,
+            meeting_taken TEXT,
+            existing_budget TEXT,
+            estimated_budget REAL DEFAULT 0.0,
+            expected_decision_date TEXT,
+            proposal_requested INTEGER DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'Submitted',
+            submitted_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (growth_associate_id) REFERENCES users (id)
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS proposal_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            corporate_opportunity_id INTEGER,
+            prospect_id INTEGER,
+            growth_associate_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            requirements TEXT,
+            status TEXT NOT NULL DEFAULT 'Requested',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (corporate_opportunity_id) REFERENCES corporate_opportunities (id),
+            FOREIGN KEY (prospect_id) REFERENCES prospects (id),
+            FOREIGN KEY (growth_associate_id) REFERENCES users (id)
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS proposals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            proposal_request_id INTEGER NOT NULL,
+            growth_associate_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT,
+            stored_name TEXT NOT NULL,
+            original_name TEXT NOT NULL,
+            relative_path TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'Ready',
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (proposal_request_id) REFERENCES proposal_requests (id),
+            FOREIGN KEY (growth_associate_id) REFERENCES users (id)
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS commissions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            prospect_id INTEGER NOT NULL UNIQUE,
+            growth_associate_id INTEGER NOT NULL,
+            commission_amount REAL DEFAULT 0.0,
+            commission_status TEXT NOT NULL DEFAULT 'Pending',
+            payment_approval_status TEXT NOT NULL DEFAULT 'Unapproved',
+            approved_by INTEGER,
+            approved_at TEXT,
+            paid_at TEXT,
+            notes TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (prospect_id) REFERENCES prospects (id),
+            FOREIGN KEY (growth_associate_id) REFERENCES users (id),
+            FOREIGN KEY (approved_by) REFERENCES users (id)
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS audit_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            entity_type TEXT NOT NULL,
+            entity_id INTEGER NOT NULL,
+            action TEXT NOT NULL,
+            previous_value TEXT,
+            new_value TEXT,
+            ip_address TEXT,
+            timestamp TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+        """
+    )
     ensure_admin_role_supported(db)
     ensure_column(db, "users", "must_change_password", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(db, "users", "reset_token", "TEXT")
@@ -1127,6 +1373,11 @@ def migrate_database_schema(db: Any) -> None:
           )
         """
     )
+    db.execute("CREATE INDEX IF NOT EXISTS idx_enrollments_user_id ON enrollments(user_id)")
+    db.execute("CREATE INDEX IF NOT EXISTS idx_classrooms_mentor_id ON classrooms(mentor_id)")
+    db.execute("CREATE INDEX IF NOT EXISTS idx_submissions_student_id ON submissions(student_id)")
+    db.execute("CREATE INDEX IF NOT EXISTS idx_attendance_records_student_id ON attendance_records(student_id)")
+    db.execute("CREATE INDEX IF NOT EXISTS idx_live_sessions_classroom_id ON live_sessions(classroom_id)")
 
 
 def allowed_upload_file(filename: str) -> bool:
@@ -1494,6 +1745,45 @@ def send_project_suggestion_email(
     except Exception as exc:
         app.logger.exception("Failed to send project suggestion email to %s", mentor_email)
         raise RuntimeError("The suggestion was saved, but the mentor notification email could not be delivered.") from exc
+
+
+def send_project_suggestion_review_email(
+    *,
+    student_name: str,
+    student_email: str,
+    classroom_title: str,
+    project_title: str,
+    status: str,
+    mentor_note: str | None,
+    classroom_url: str,
+) -> None:
+    ensure_mail_delivery_configured()
+
+    subject = f"Project Suggestion Reviewed: {project_title}"
+    note_part = f"\nMentor note:\n{mentor_note}\n" if mentor_note else ""
+    body = (
+        f"Hello {student_name},\n\n"
+        f"Your project suggestion for {classroom_title} has been reviewed.\n\n"
+        f"Project title: {project_title}\n"
+        f"Status: {status.title()}\n"
+        f"{note_part}\n"
+        f"View details in the Learning Hub: {classroom_url}\n\n"
+        "Best regards,\n"
+        "Tektutors Learning Hub"
+    )
+    try:
+        with app.app_context():
+            message = Message(
+                subject=subject,
+                recipients=[student_email],
+                body=body,
+                sender=app.config["MAIL_DEFAULT_SENDER"],
+            )
+            mail.send(message)
+    except Exception as exc:
+        app.logger.exception("Failed to send project suggestion review email to %s", student_email)
+        raise RuntimeError("The review was saved, but the learner notification email could not be delivered.") from exc
+
 
 
 def send_classroom_learner_notification_email(
@@ -1894,6 +2184,7 @@ def initialize_storage() -> None:
     try:
         initialize_database_schema(db)
         migrate_database_schema(db)
+        ensure_certificate_approvals_table(db)
         seed_database(db)
         db.commit()
     finally:
@@ -1924,10 +2215,12 @@ def user_has_role(user: dict[str, Any] | None, allowed_roles: str | tuple[str, .
 
 def login_user(user: dict[str, Any]) -> None:
     session["user_id"] = int(user["id"])
+    session.pop("has_pending_feedback", None)
 
 
 def logout_user() -> None:
     session.pop("user_id", None)
+    session.pop("has_pending_feedback", None)
 
 
 def is_user_approved(user: dict[str, Any] | None) -> bool:
@@ -1996,7 +2289,18 @@ def enforce_required_course_feedback() -> None:
     ):
         return None
 
+    # Check cached session state first
+    has_pending = session.get("has_pending_feedback")
+    if has_pending is False:
+        return None
+
+    if has_pending is True:
+        flash("Please complete the course feedback form before continuing.", "error")
+        return redirect(url_for("student_dashboard"))
+
+    # Cache miss - query the database
     pending_feedback = get_pending_course_feedback(int(g.user["id"]))
+    session["has_pending_feedback"] = (pending_feedback is not None)
     if pending_feedback is not None:
         flash("Please complete the course feedback form before continuing.", "error")
         return redirect(url_for("student_dashboard"))
@@ -2115,6 +2419,145 @@ def student_passed_project(classroom_id: int, student_id: int) -> bool:
             return True
     return False
 
+
+
+def student_coursework_completion(classroom_id: int, student_id: int) -> dict[str, Any]:
+    rows = fetch_all(
+        """
+        SELECT
+            a.assignment_type,
+            a.title,
+            a.description,
+            s.id AS submission_id
+        FROM assignments a
+        LEFT JOIN submissions s ON s.assignment_id = a.id AND s.student_id = ?
+        WHERE a.classroom_id = ?
+        """,
+        (student_id, classroom_id),
+    )
+    assignment_total = 0
+    assignment_submitted = 0
+    project_total = 0
+    project_submitted = 0
+    for row in rows:
+        submitted = row.get("submission_id") is not None
+        if is_project_coursework(row):
+            project_total += 1
+            if submitted:
+                project_submitted += 1
+        else:
+            assignment_total += 1
+            if submitted:
+                assignment_submitted += 1
+    coursework_total = assignment_total + project_total
+    coursework_submitted = assignment_submitted + project_submitted
+    return {
+        "assignment_total": assignment_total,
+        "assignment_submitted": assignment_submitted,
+        "project_total": project_total,
+        "project_submitted": project_submitted,
+        "coursework_total": coursework_total,
+        "coursework_submitted": coursework_submitted,
+        "assignments_complete": assignment_submitted >= assignment_total,
+        "projects_submitted": project_total > 0 and project_submitted >= project_total,
+        "all_coursework_submitted": coursework_total > 0 and coursework_submitted >= coursework_total and project_total > 0,
+    }
+
+
+def ensure_certificate_approvals_table(db: Any) -> None:
+    try:
+        if DATABASE_ENGINE == "postgresql":
+            db.execute(
+                """
+                CREATE TABLE IF NOT EXISTS certificate_approvals (
+                    id SERIAL PRIMARY KEY,
+                    classroom_id INTEGER NOT NULL,
+                    student_id INTEGER NOT NULL,
+                    approved_by INTEGER NOT NULL,
+                    approved_at TEXT NOT NULL,
+                    revoked_at TEXT,
+                    revoked_by INTEGER,
+                    CONSTRAINT unique_classroom_student UNIQUE(classroom_id, student_id)
+                )
+                """
+            )
+        else:
+            db.execute(
+                """
+                CREATE TABLE IF NOT EXISTS certificate_approvals (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    classroom_id INTEGER NOT NULL,
+                    student_id INTEGER NOT NULL,
+                    approved_by INTEGER NOT NULL,
+                    approved_at TEXT NOT NULL,
+                    revoked_at TEXT,
+                    revoked_by INTEGER,
+                    UNIQUE(classroom_id, student_id)
+                )
+                """
+            )
+        db.commit()
+    except Exception as exc:
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        app.logger.warning("Could not create certificate_approvals table: %s", exc)
+
+
+def certificate_approval_record(classroom_id: int, student_id: int) -> dict[str, Any] | None:
+    db = get_db()
+    try:
+        return fetch_one(
+            """
+            SELECT ca.*, approver.name AS approved_by_name
+            FROM certificate_approvals ca
+            JOIN users approver ON approver.id = ca.approved_by
+            WHERE ca.classroom_id = ? AND ca.student_id = ? AND ca.revoked_at IS NULL
+            """,
+            (classroom_id, student_id),
+        )
+    except Exception as exc:
+        app.logger.warning("Querying certificate_approvals failed (%s), rolling back and creating table...", exc)
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        ensure_certificate_approvals_table(db)
+        try:
+            return fetch_one(
+                """
+                SELECT ca.*, approver.name AS approved_by_name
+                FROM certificate_approvals ca
+                JOIN users approver ON approver.id = ca.approved_by
+                WHERE ca.classroom_id = ? AND ca.student_id = ? AND ca.revoked_at IS NULL
+                """,
+                (classroom_id, student_id),
+            )
+        except Exception as retry_exc:
+            app.logger.warning("Retry querying certificate_approvals failed (%s), rolling back...", retry_exc)
+            try:
+                db.rollback()
+            except Exception:
+                pass
+            return None
+
+
+def certificate_eligibility_status(classroom_id: int, student_id: int, attendance_progress: int) -> dict[str, Any]:
+    coursework = student_coursework_completion(classroom_id, student_id)
+    project_passed = student_passed_project(classroom_id, student_id)
+    approval = certificate_approval_record(classroom_id, student_id)
+    return {
+        **coursework,
+        "attendance_complete": int(attendance_progress) >= 100,
+        "project_passed": project_passed,
+        "admin_approved": approval is not None,
+        "approval": approval,
+        "certificate_unlocked": int(attendance_progress) >= 100
+        and coursework["all_coursework_submitted"]
+        and project_passed
+        and approval is not None,
+    }
 
 def submission_timing_status(due_at: str, submitted_at: str | None) -> str:
     if not submitted_at:
@@ -2477,10 +2920,10 @@ def get_student_dashboard_data(user_id: int) -> dict[str, Any]:
         )
         classroom["progress"] = classroom["attendance_progress"]
         classroom["progress_label"] = f"{classroom['attendance_attended']}/{classroom['attendance_total']} sessions attended"
-        classroom["project_passed"] = student_passed_project(int(classroom["id"]), user_id)
         classroom["project_unlocked"] = int(classroom["progress"]) >= PROJECT_UNLOCK_PROGRESS
         classroom["project_unlock_remaining"] = max(PROJECT_UNLOCK_PROGRESS - int(classroom["progress"]), 0)
-        classroom["certificate_unlocked"] = int(classroom["progress"]) >= 100 and classroom["project_passed"]
+        certificate_status = certificate_eligibility_status(int(classroom["id"]), user_id, int(classroom["progress"]))
+        classroom.update(certificate_status)
     project_unlocked_slugs = {classroom["slug"] for classroom in classrooms if classroom["project_unlocked"]}
     visible_assignments = []
     projects = []
@@ -2492,19 +2935,27 @@ def get_student_dashboard_data(user_id: int) -> dict[str, Any]:
             continue
         visible_assignments.append(assignment)
 
-    suggestions = fetch_all(
-        """
-        SELECT
-            ps.*,
-            c.slug,
-            c.title AS classroom_title
-        FROM project_suggestions ps
-        JOIN classrooms c ON c.id = ps.classroom_id
-        WHERE ps.student_id = ?
-        ORDER BY ps.submitted_at DESC
-        """,
-        (user_id,),
-    )
+    try:
+        suggestions = fetch_all(
+            """
+            SELECT
+                ps.*,
+                c.slug,
+                c.title AS classroom_title
+            FROM project_suggestions ps
+            JOIN classrooms c ON c.id = ps.classroom_id
+            WHERE ps.student_id = ?
+            ORDER BY ps.submitted_at DESC
+            """,
+            (user_id,),
+        )
+    except Exception as exc:
+        app.logger.warning("Fetching project_suggestions failed (%s), rolling back...", exc)
+        try:
+            get_db().rollback()
+        except Exception:
+            pass
+        suggestions = []
     for suggestion in suggestions:
         suggestion["submitted_label"] = format_iso_label(suggestion["submitted_at"])
 
@@ -2518,7 +2969,7 @@ def get_student_dashboard_data(user_id: int) -> dict[str, Any]:
     certificate_classrooms = [
         classroom
         for classroom in classrooms
-        if int(classroom["progress"]) >= 100 and classroom["project_passed"]
+        if classroom["certificate_unlocked"]
     ]
     meetings = get_upcoming_meetings_for_user(user_id, "student")
     return {
@@ -2967,8 +3418,7 @@ def get_classroom_for_user(slug: str, user: dict[str, Any]) -> dict[str, Any] | 
         )
         classroom["project_unlocked"] = int(classroom["progress"]) >= PROJECT_UNLOCK_PROGRESS
         classroom["project_unlock_remaining"] = max(PROJECT_UNLOCK_PROGRESS - int(classroom["progress"]), 0)
-        classroom["project_passed"] = student_passed_project(int(classroom["id"]), int(user["id"]))
-        classroom["certificate_unlocked"] = int(classroom["progress"]) >= 100 and classroom["project_passed"]
+        classroom.update(certificate_eligibility_status(int(classroom["id"]), int(user["id"]), int(classroom["progress"])))
         for assignment in assignments:
             assignment["due_label"] = format_iso_label(assignment["due_at"])
             assignment["due_input_value"] = assignment["due_at"][:16] if assignment["due_at"] else ""
@@ -3079,6 +3529,23 @@ def get_classroom_for_user(slug: str, user: dict[str, Any]) -> dict[str, Any] | 
     learners = fetch_all(classmates_query, (int(classroom["id"]),))
     people = [classroom["mentor_name"]]
     people.extend(item["name"] for item in learners)
+    certificate_requests = []
+    if user["role"] in {"mentor", "admin"}:
+        target = attendance_target_from_duration(classroom.get("course_duration"), int(classroom["attendance_target"] or 8))
+        for learner in learners:
+            progress = attendance_progress_for_student(int(classroom["id"]), int(learner["id"]), target)
+            status = certificate_eligibility_status(int(classroom["id"]), int(learner["id"]), int(progress["attendance_progress"]))
+            approval = status.get("approval")
+            certificate_requests.append({
+                **learner,
+                **progress,
+                **status,
+                "approved_label": format_iso_label(approval["approved_at"]) if approval else "Pending admin approval",
+                "eligible_for_approval": status["attendance_complete"]
+                and status["all_coursework_submitted"]
+                and status["project_passed"],
+            })
+
     if user["role"] == "student":
         project_suggestions = fetch_all(
             """
@@ -3219,54 +3686,57 @@ def get_classroom_for_user(slug: str, user: dict[str, Any]) -> dict[str, Any] | 
         session["start_time_formatted"] = format_iso_label(session["start_time"])
 
         # Auto-sync recording if completed and still pending
+        # In production, this is skipped for real meetings to avoid slow synchronous API calls during page load.
         if session_is_completed and session.get("recording_status") == "pending":
-            try:
-                download_url, play_url = zoho_meeting.fetch_meeting_recording(session["meeting_key"])
-                if download_url or play_url:
-                    db_conn = get_db()
-                    db_conn.execute(
-                        """
-                        UPDATE live_sessions
-                        SET recording_download_url = ?, recording_play_url = ?, recording_status = 'available'
-                        WHERE id = ?
-                        """,
-                        (download_url, play_url, int(session["id"]))
-                    )
-
-                    rec_title = f"Recording: {session['topic']}"
-                    existing_material = db_conn.execute(
-                        "SELECT id FROM materials WHERE classroom_id = ? AND title = ?",
-                        (int(classroom["id"]), rec_title)
-                    ).fetchone()
-
-                    if not existing_material:
-                        desc = f"Automatically imported recording from live training session on {format_iso_label(session['start_time'])}."
+            is_mock = session["meeting_key"].startswith("mock-") if session.get("meeting_key") else False
+            if not IS_PRODUCTION or is_mock:
+                try:
+                    download_url, play_url = zoho_meeting.fetch_meeting_recording(session["meeting_key"])
+                    if download_url or play_url:
+                        db_conn = get_db()
                         db_conn.execute(
                             """
-                            INSERT INTO materials (
-                                classroom_id, uploader_id, title, description, material_url, stored_name, original_name, relative_path, uploaded_at
-                            )
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            UPDATE live_sessions
+                            SET recording_download_url = ?, recording_play_url = ?, recording_status = 'available'
+                            WHERE id = ?
                             """,
-                            (
-                                int(classroom["id"]),
-                                int(classroom["mentor_id"]),
-                                rec_title,
-                                desc,
-                                play_url or download_url,
-                                "zoho-recording",
-                                f"recording-{session['meeting_key']}",
-                                play_url or download_url,
-                                timestamp_now()
-                            )
+                            (download_url, play_url, int(session["id"]))
                         )
-                    db_conn.commit()
 
-                    session["recording_download_url"] = download_url
-                    session["recording_play_url"] = play_url
-                    session["recording_status"] = "available"
-            except Exception as e:
-                print(f"Error auto-syncing recording for meeting {session['meeting_key']}: {e}")
+                        rec_title = f"Recording: {session['topic']}"
+                        existing_material = db_conn.execute(
+                            "SELECT id FROM materials WHERE classroom_id = ? AND title = ?",
+                            (int(classroom["id"]), rec_title)
+                        ).fetchone()
+
+                        if not existing_material:
+                            desc = f"Automatically imported recording from live training session on {format_iso_label(session['start_time'])}."
+                            db_conn.execute(
+                                """
+                                INSERT INTO materials (
+                                    classroom_id, uploader_id, title, description, material_url, stored_name, original_name, relative_path, uploaded_at
+                                )
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                """,
+                                (
+                                    int(classroom["id"]),
+                                    int(classroom["mentor_id"]),
+                                    rec_title,
+                                    desc,
+                                    play_url or download_url,
+                                    "zoho-recording",
+                                    f"recording-{session['meeting_key']}",
+                                    play_url or download_url,
+                                    timestamp_now()
+                                )
+                            )
+                        db_conn.commit()
+
+                        session["recording_download_url"] = download_url
+                        session["recording_play_url"] = play_url
+                        session["recording_status"] = "available"
+                except Exception as e:
+                    print(f"Error auto-syncing recording for meeting {session['meeting_key']}: {e}")
 
     classroom["live_sessions"] = live_sessions
 
@@ -3280,6 +3750,8 @@ def get_classroom_for_user(slug: str, user: dict[str, Any]) -> dict[str, Any] | 
     classroom["learners"] = learners
     classroom["attendance_sessions"] = attendance_sessions
     classroom["attendance_history"] = attendance_history
+    if user["role"] in {"mentor", "admin"}:
+        classroom["certificate_requests"] = certificate_requests
     classroom["attendance_summary"] = {
         "total_sessions": int(attendance_summary_row["total_sessions"] or 0) if attendance_summary_row else 0,
         "present_count": int(attendance_summary_row["present_count"] or 0) if attendance_summary_row else 0,
@@ -3305,6 +3777,7 @@ def inject_site_context() -> dict[str, Any]:
         "form_started_at": f"{time.time():.3f}",
         "csrf_token": get_csrf_token,
         "csrf_field": csrf_field,
+        "PROJECT_UNLOCK_PROGRESS": PROJECT_UNLOCK_PROGRESS,
     }
 
 
@@ -3734,10 +4207,12 @@ def logout():
 @app.route("/dashboard")
 @login_required()
 def dashboard():
-    if g.user["role"] == "admin":
+    if g.user["role"] in ("admin", "growth_manager", "corporate_staff", "finance"):
         return redirect(url_for("admin_dashboard"))
     if g.user["role"] == "mentor":
         return redirect(url_for("mentor_dashboard"))
+    if g.user["role"] == "growth_associate":
+        return redirect(url_for("growth_associate_dashboard"))
     return redirect(url_for("student_dashboard"))
 
 
@@ -3758,6 +4233,7 @@ def admin_dashboard():
 @login_required("student")
 def student_dashboard():
     pending_feedback = get_pending_course_feedback(int(g.user["id"]))
+    session["has_pending_feedback"] = (pending_feedback is not None)
     if pending_feedback is not None:
         return render_template(
             "course_feedback.html",
@@ -3805,30 +4281,133 @@ def download_student_certificate(slug: str):
         int(g.user["id"]),
         attendance_target_from_duration(classroom.get("course_duration"), int(classroom["attendance_target"] or 8)),
     )
-    if int(progress["attendance_progress"]) < 100:
+    status = certificate_eligibility_status(int(classroom["id"]), int(g.user["id"]), int(progress["attendance_progress"]))
+    if not status["attendance_complete"]:
         flash("Your certificate unlocks when your attendance progress reaches 100%.", "error")
         return redirect(url_for("student_dashboard"))
-    if not student_passed_project(int(classroom["id"]), int(g.user["id"])):
+    if not status["all_coursework_submitted"]:
+        flash("Your certificate unlocks after you submit every assignment and project.", "error")
+        return redirect(url_for("student_dashboard"))
+    if not status["project_passed"]:
         flash("Your certificate unlocks after you pass the project.", "error")
+        return redirect(url_for("student_dashboard"))
+    if not status["admin_approved"]:
+        flash("Your certificate is awaiting admin approval before download access is enabled.", "error")
         return redirect(url_for("student_dashboard"))
 
     issued_at = datetime.now(tz=UTC)
     certificate_id = f"TT-{int(g.user['id']):04d}-{int(classroom['id']):04d}"
     verify_url = url_for("verify_certificate", certificate_id=certificate_id, _external=True)
+    courses_rows = fetch_all(
+        """
+        SELECT c.title FROM classrooms c
+        JOIN enrollments e ON e.classroom_id = c.id
+        WHERE e.user_id = ?
+        """,
+        (int(g.user["id"]),),
+    )
+    courses = [row["title"] for row in courses_rows]
+    if not courses:
+        # Fallback to the current classroom title
+        courses = [classroom["title"]]
+    # Optional: log for debugging
+    app.logger.debug(f"Certificate generation for user {g.user['id']}: courses={courses}")
+
+    # Ensure the latest template is used
+    app.jinja_env.cache = {}
     html = render_template(
         "certificate.html",
         learner_name=g.user["name"],
         classroom=classroom,
+        courses=courses,
         issued_label=issued_at.strftime("%B %d, %Y"),
         certificate_id=certificate_id,
         verify_url=verify_url,
         logo_url=url_for("static", filename="images/tektutors-logo.svg", _external=True),
         qr_url=f"https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={verify_url}",
+        template_url=url_for("static", filename="images/tektutors-certificate-template.png", _external=True),
+        is_sample=False,
+        is_earned=True,
     )
+    app.logger.debug('Rendered certificate HTML: %s', html)
     response = make_response(html)
     filename = secure_filename(f"tektutors-certificate-{classroom['slug']}-{g.user['name']}.html")
     response.headers["Content-Type"] = "text/html; charset=utf-8"
     response.headers["Content-Disposition"] = f'attachment; filename="{filename}"'
+    # Prevent any caching of the downloaded certificate HTML
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
+@app.route("/dashboard/student/certificates/<slug>/view")
+@login_required("student")
+def view_student_certificate(slug: str):
+    """Render the learner's certificate HTML for embedding in the certificate tab."""
+    classroom = fetch_one(
+        """
+        SELECT
+            c.id,
+            c.slug,
+            c.title,
+            c.code,
+            c.course_duration,
+            c.attendance_target,
+            mentor.name AS mentor_name
+        FROM classrooms c
+        JOIN users mentor ON mentor.id = c.mentor_id
+        JOIN enrollments e ON e.classroom_id = c.id
+        WHERE c.slug = ? AND e.user_id = ?
+        """,
+        (slug, int(g.user["id"]))
+    )
+    if classroom is None:
+        flash("That certificate could not be found.", "error")
+        return redirect(url_for("student_dashboard"))
+
+    progress = attendance_progress_for_student(
+        int(classroom["id"]),
+        int(g.user["id"]),
+        attendance_target_from_duration(classroom.get("course_duration"), int(classroom["attendance_target"] or 8)),
+    )
+    status = certificate_eligibility_status(int(classroom["id"]), int(g.user["id"]), int(progress["attendance_progress"]))
+    all_requirements_met = (
+        status.get("attendance_complete")
+        and status.get("all_coursework_submitted")
+        and status.get("project_passed")
+        and status.get("admin_approved")
+    )
+    is_sample = not all_requirements_met
+    is_earned = all_requirements_met
+
+    issued_at = datetime.now(tz=UTC)
+    certificate_id = f"TT-{int(g.user['id']):04d}-{int(classroom['id']):04d}"
+    verify_url = url_for("verify_certificate", certificate_id=certificate_id, _external=True)
+    courses_rows = fetch_all(
+        """
+        SELECT c.title FROM classrooms c
+        JOIN enrollments e ON e.classroom_id = c.id
+        WHERE e.user_id = ?
+        """,
+        (int(g.user["id"]),),
+    )
+    courses = [row["title"] for row in courses_rows] or [classroom["title"]]
+    html = render_template(
+        "certificate.html",
+        learner_name=g.user["name"],
+        classroom=classroom,
+        courses=courses,
+        issued_label=issued_at.strftime("%B %d, %Y"),
+        certificate_id=certificate_id,
+        verify_url=verify_url,
+        logo_url=url_for("static", filename="images/tektutors-logo.svg", _external=True),
+        qr_url=f"https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={verify_url}",
+        template_url=url_for("static", filename="images/tektutors-certificate-template.png", _external=True),
+        is_sample=is_sample,
+        is_earned=is_earned,
+    )
+    response = make_response(html)
+    response.headers["Content-Type"] = "text/html; charset=utf-8"
     return response
 
 
@@ -3867,7 +4446,8 @@ def verify_certificate(certificate_id: str):
             user_id,
             attendance_target_from_duration(certificate.get("course_duration"), int(certificate["attendance_target"] or 8)),
         )
-        if int(progress["attendance_progress"]) < 100 or not student_passed_project(classroom_id, user_id):
+        status = certificate_eligibility_status(classroom_id, user_id, int(progress["attendance_progress"]))
+        if not status["certificate_unlocked"]:
             certificate = None
 
     return render_template(
@@ -3877,6 +4457,69 @@ def verify_certificate(certificate_id: str):
         certificate=certificate,
         certificate_id=certificate_id.strip().upper(),
     ), 200 if certificate else 404
+
+
+@app.route("/admin/classrooms/<slug>/certificates/<int:student_id>/approval", methods=["POST"])
+@login_required("admin")
+def admin_update_certificate_approval(slug: str, student_id: int):
+    ensure_certificate_approvals_table(get_db())
+    classroom = fetch_one("SELECT * FROM classrooms WHERE slug = ?", (slug,))
+    if classroom is None:
+        flash("That classroom could not be found.", "error")
+        return redirect(url_for("admin_dashboard"))
+
+    learner = fetch_one(
+        """
+        SELECT u.id, u.name
+        FROM enrollments e
+        JOIN users u ON u.id = e.user_id
+        WHERE e.classroom_id = ? AND u.id = ? AND u.role = 'student'
+        """,
+        (int(classroom["id"]), student_id),
+    )
+    if learner is None:
+        flash("That learner is not enrolled in this classroom.", "error")
+        return redirect(url_for("lms_classroom", slug=slug) + "#certificate")
+
+    action = request.form.get("action", "approve").strip().lower()
+    if action == "revoke":
+        get_db().execute(
+            """
+            UPDATE certificate_approvals
+            SET revoked_at = ?, revoked_by = ?
+            WHERE classroom_id = ? AND student_id = ? AND revoked_at IS NULL
+            """,
+            (timestamp_now(), int(g.user["id"]), int(classroom["id"]), student_id),
+        )
+        get_db().commit()
+        flash(f"Certificate download access revoked for {learner['name']}.", "success")
+        return redirect(url_for("lms_classroom", slug=slug) + "#certificate")
+
+    progress = attendance_progress_for_student(
+        int(classroom["id"]),
+        student_id,
+        attendance_target_from_duration(classroom.get("course_duration"), int(classroom["attendance_target"] or 8)),
+    )
+    status = certificate_eligibility_status(int(classroom["id"]), student_id, int(progress["attendance_progress"]))
+    if not (status["attendance_complete"] and status["all_coursework_submitted"] and status["project_passed"]):
+        flash("This learner is not ready for certificate approval yet.", "error")
+        return redirect(url_for("lms_classroom", slug=slug) + "#certificate")
+
+    get_db().execute(
+        """
+        INSERT INTO certificate_approvals (classroom_id, student_id, approved_by, approved_at, revoked_at, revoked_by)
+        VALUES (?, ?, ?, ?, NULL, NULL)
+        ON CONFLICT(classroom_id, student_id) DO UPDATE SET
+            approved_by = excluded.approved_by,
+            approved_at = excluded.approved_at,
+            revoked_at = NULL,
+            revoked_by = NULL
+        """,
+        (int(classroom["id"]), student_id, int(g.user["id"]), timestamp_now()),
+    )
+    get_db().commit()
+    flash(f"Certificate download access approved for {learner['name']}.", "success")
+    return redirect(url_for("lms_classroom", slug=slug) + "#certificate")
 
 
 @app.route("/course-feedback", methods=["POST"])
@@ -3941,9 +4584,11 @@ def submit_course_feedback():
         )
         get_db().commit()
     except DB_INTEGRITY_ERRORS:
+        session["has_pending_feedback"] = (get_pending_course_feedback(int(g.user["id"])) is not None)
         flash("This feedback checkpoint has already been completed.", "success")
         return redirect(url_for("student_dashboard"))
 
+    session["has_pending_feedback"] = (get_pending_course_feedback(int(g.user["id"])) is not None)
     flash("Thank you. Your course feedback has been submitted.", "success")
     return redirect(url_for("student_dashboard"))
 
@@ -4887,6 +5532,114 @@ def sync_classroom_meetings(slug: str):
     return redirect(url_for("lms_classroom", slug=slug))
 
 
+@app.route("/lms/classroom/<slug>/meetings/<int:session_id>/recording", methods=["POST"])
+@login_required(("mentor", "admin"))
+def manual_add_recording(slug: str, session_id: int):
+    classroom = get_classroom_for_user(slug, g.user)
+    if classroom is None:
+        flash("That classroom could not be found.", "error")
+        return redirect(url_for("dashboard"))
+
+    session_row = fetch_one(
+        "SELECT * FROM live_sessions WHERE id = ? AND classroom_id = ?",
+        (session_id, int(classroom["id"]))
+    )
+    if not session_row:
+        flash("Live session not found.", "error")
+        return redirect(url_for("lms_classroom", slug=slug))
+
+    recording_url = request.form.get("recording_url", "").strip()
+    if not recording_url:
+        flash("Recording URL is required.", "error")
+        return redirect(url_for("lms_classroom", slug=slug))
+
+    db = get_db()
+    db.execute(
+        """
+        UPDATE live_sessions
+        SET recording_download_url = ?, recording_play_url = ?, recording_status = 'available'
+        WHERE id = ?
+        """,
+        (recording_url, recording_url, session_id)
+    )
+
+    # Insert or update in materials table
+    rec_title = f"Recording: {session_row['topic']}"
+    existing_material = db.execute(
+        "SELECT id FROM materials WHERE classroom_id = ? AND title = ?",
+        (int(classroom["id"]), rec_title)
+    ).fetchone()
+
+    if not existing_material:
+        desc = f"Manually added recording from live training session on {format_iso_label(session_row['start_time'])}."
+        db.execute(
+            """
+            INSERT INTO materials (
+                classroom_id, uploader_id, title, description, material_url, stored_name, original_name, relative_path, uploaded_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                int(classroom["id"]),
+                int(g.user["id"]),
+                rec_title,
+                desc,
+                recording_url,
+                "zoho-recording",
+                f"recording-{session_row['meeting_key']}",
+                recording_url,
+                timestamp_now()
+            )
+        )
+    else:
+        db.execute(
+            "UPDATE materials SET material_url = ?, relative_path = ? WHERE id = ?",
+            (recording_url, recording_url, int(existing_material["id"]))
+        )
+
+    db.commit()
+    flash("Recording added manually and published to Course Materials.", "success")
+    return redirect(url_for("lms_classroom", slug=slug))
+
+
+@app.route("/lms/classroom/<slug>/meetings/<int:session_id>/recording/delete", methods=["POST"])
+@login_required(("mentor", "admin"))
+def manual_delete_recording(slug: str, session_id: int):
+    classroom = get_classroom_for_user(slug, g.user)
+    if classroom is None:
+        flash("That classroom could not be found.", "error")
+        return redirect(url_for("dashboard"))
+
+    session_row = fetch_one(
+        "SELECT * FROM live_sessions WHERE id = ? AND classroom_id = ?",
+        (session_id, int(classroom["id"]))
+    )
+    if not session_row:
+        flash("Live session not found.", "error")
+        return redirect(url_for("lms_classroom", slug=slug))
+
+    db = get_db()
+    db.execute(
+        """
+        UPDATE live_sessions
+        SET recording_download_url = NULL, recording_play_url = NULL, recording_status = 'pending'
+        WHERE id = ?
+        """,
+        (session_id,)
+    )
+
+    # Delete from materials table
+    rec_title = f"Recording: {session_row['topic']}"
+    db.execute(
+        "DELETE FROM materials WHERE classroom_id = ? AND title = ?",
+        (int(classroom["id"]), rec_title)
+    )
+
+    db.commit()
+    flash("Recording link removed successfully.", "success")
+    return redirect(url_for("lms_classroom", slug=slug))
+
+
 @app.route("/lms/join", methods=["POST"])
 @login_required("student")
 def join_classroom():
@@ -5405,6 +6158,65 @@ def suggest_project(slug: str):
         app.logger.warning("Project suggestion was saved but notification email failed: %s", exc)
     flash("Your project suggestion has been sent to your mentor.", "success")
     return redirect(url_for("lms_classroom", slug=slug))
+
+
+@app.route("/lms/classroom/<slug>/projects/<int:suggestion_id>/review", methods=["POST"])
+@login_required(("admin", "mentor"))
+def review_project_suggestion(slug: str, suggestion_id: int):
+    classroom = get_classroom_for_user(slug, g.user)
+    if classroom is None:
+        flash("You do not have access to that classroom.", "error")
+        return redirect(url_for("dashboard"))
+
+    status = request.form.get("status", "").strip().lower()
+    mentor_note = request.form.get("mentor_note", "").strip()
+
+    if status not in ("approved", "declined"):
+        flash("Invalid project suggestion status.", "error")
+        return redirect(url_for("lms_classroom", slug=slug))
+
+    suggestion = fetch_one(
+        """
+        SELECT ps.*, u.name AS student_name, u.email AS student_email
+        FROM project_suggestions ps
+        JOIN users u ON u.id = ps.student_id
+        WHERE ps.id = ? AND ps.classroom_id = ?
+        """,
+        (suggestion_id, int(classroom["id"])),
+    )
+
+    if not suggestion:
+        flash("Project suggestion not found.", "error")
+        return redirect(url_for("lms_classroom", slug=slug))
+
+    get_db().execute(
+        """
+        UPDATE project_suggestions
+        SET status = ?, mentor_note = ?
+        WHERE id = ?
+        """,
+        (status, mentor_note or None, suggestion_id),
+    )
+    get_db().commit()
+
+    try:
+        classroom_url = url_for("lms_classroom", slug=slug, _external=True)
+        send_project_suggestion_review_email(
+            student_name=suggestion["student_name"],
+            student_email=suggestion["student_email"],
+            classroom_title=classroom["title"],
+            project_title=suggestion["title"],
+            status=status,
+            mentor_note=mentor_note,
+            classroom_url=classroom_url,
+        )
+        flash(f"Project suggestion status updated to {status} and notification sent to learner.", "success")
+    except RuntimeError as exc:
+        app.logger.warning("Project suggestion was updated but notification email failed: %s", exc)
+        flash(f"Project suggestion status updated to {status}, but learner notification email failed.", "warning")
+
+    return redirect(url_for("lms_classroom", slug=slug))
+
 
 
 @app.route("/lms/submissions/<int:submission_id>/download")
@@ -5962,6 +6774,77 @@ def check_and_send_meeting_reminders() -> None:
                 app.logger.exception(f"Error checking/sending reminder for meeting {row['id']}: {e}")
 
 
+def sync_all_pending_recordings() -> int:
+    with app.app_context():
+        db = get_db()
+        pending_sessions = db.execute(
+            """
+            SELECT s.*, c.mentor_id
+            FROM live_sessions s
+            JOIN classrooms c ON c.id = s.classroom_id
+            WHERE s.recording_status = 'pending'
+            """
+        ).fetchall()
+
+        synced_count = 0
+        now_val = datetime.now(tz=UTC)
+
+        for session in pending_sessions:
+            try:
+                session_dict = dict(session)
+                start_dt = datetime.fromisoformat(session_dict["start_time"])
+                duration_delta = timedelta(minutes=int(session_dict["duration"]))
+                end_dt = start_dt + duration_delta
+
+                if now_val > end_dt:
+                    download_url, play_url = zoho_meeting.fetch_meeting_recording(session_dict["meeting_key"])
+                    if download_url or play_url:
+                        db.execute(
+                            """
+                            UPDATE live_sessions
+                            SET recording_download_url = ?, recording_play_url = ?, recording_status = 'available'
+                            WHERE id = ?
+                            """,
+                            (download_url, play_url, int(session_dict["id"]))
+                        )
+
+                        rec_title = f"Recording: {session_dict['topic']}"
+                        existing_material = db.execute(
+                            "SELECT id FROM materials WHERE classroom_id = ? AND title = ?",
+                            (int(session_dict["classroom_id"]), rec_title)
+                        ).fetchone()
+
+                        if not existing_material:
+                            desc = f"Automatically imported recording from live training session on {format_iso_label(session_dict['start_time'])}."
+                            db.execute(
+                                """
+                                INSERT INTO materials (
+                                    classroom_id, uploader_id, title, description, material_url, stored_name, original_name, relative_path, uploaded_at
+                                )
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                """,
+                                (
+                                    int(session_dict["classroom_id"]),
+                                    int(session_dict["mentor_id"]),
+                                    rec_title,
+                                    desc,
+                                    play_url or download_url,
+                                    "zoho-recording",
+                                    f"recording-{session_dict['meeting_key']}",
+                                    play_url or download_url,
+                                    timestamp_now()
+                                )
+                            )
+                        synced_count += 1
+            except Exception as e:
+                app.logger.exception(f"Error auto-syncing recording for meeting {session.get('meeting_key') if isinstance(session, dict) else session['meeting_key']}: {e}")
+
+        if synced_count > 0:
+            db.commit()
+            app.logger.info(f"Auto-synced {synced_count} recording(s) from Zoho.")
+        return synced_count
+
+
 def start_reminder_scheduler() -> None:
     global _meeting_reminder_scheduler_started
     if _meeting_reminder_scheduler_started:
@@ -5975,6 +6858,7 @@ def start_reminder_scheduler() -> None:
                 time.sleep(MEETING_REMINDER_CHECK_INTERVAL_SECONDS)
                 check_and_send_meeting_reminders()
                 check_and_send_challenge_due_reminders()
+                sync_all_pending_recordings()
             except Exception as e:
                 app.logger.error(f"Error in meeting reminder scheduler loop: {e}")
                 time.sleep(10)
@@ -5983,12 +6867,1300 @@ def start_reminder_scheduler() -> None:
     t.start()
 
 
-if os.environ.get("SKIP_DB_INIT", "false").lower() != "true":
+if not IS_PRODUCTION and os.environ.get("SKIP_DB_INIT", "false").lower() != "true":
     initialize_storage()
 
-if os.environ.get("SKIP_DB_INIT", "false").lower() != "true" and (IS_PRODUCTION or os.environ.get("WERKZEUG_RUN_MAIN") == "true"):
-    start_reminder_scheduler()
+if ENABLE_BACKGROUND_SCHEDULER and os.environ.get("SKIP_DB_INIT", "false").lower() != "true":
+    if not IS_PRODUCTION or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        start_reminder_scheduler()
+
+
+@app.cli.command("init-db")
+def init_db_command() -> None:
+    """Initialize the database storage, run migrations, and seed data."""
+    import click
+    click.echo("Initializing database storage...")
+    initialize_storage()
+    click.echo("Database storage initialized successfully.")
+
+
+@app.cli.command("run-scheduler")
+def run_scheduler_command() -> None:
+    """Run meeting/challenge reminders and recording sync checks immediately."""
+    import click
+    click.echo("Running reminder scheduler checks...")
+    check_and_send_meeting_reminders()
+    check_and_send_challenge_due_reminders()
+    click.echo("Running live session recording sync checks...")
+    sync_all_pending_recordings()
+    click.echo("All scheduler tasks completed.")
+
+
+@app.route("/test_certificate")
+def test_certificate():
+    """Render a certificate with hard‑coded data for debugging.
+    This route is safe to call in development; it does not require a logged‑in user.
+    """
+    # Hard‑coded demo values
+    demo_name = "Demo Student"
+    demo_classroom = {"title": "Demo Course", "slug": "demo-course"}
+    demo_courses = ["Demo Course"]
+    issued_label = datetime.now(tz=UTC).strftime("%B %d, %Y")
+    certificate_id = "TT-0000-0000"
+    verify_url = url_for("verify_certificate", certificate_id=certificate_id, _external=True)
+    html = render_template(
+        "certificate.html",
+        learner_name=demo_name,
+        classroom=demo_classroom,
+        courses=demo_courses,
+        issued_label=issued_label,
+        certificate_id=certificate_id,
+        verify_url=verify_url,
+        logo_url=url_for("static", filename="images/tektutors-logo.svg", _external=True),
+        qr_url=f"https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={verify_url}",
+        template_url=url_for("static", filename="images/tektutors-certificate-template.png", _external=True),
+    )
+    return html
+
+
+# ==============================================================================
+# TEKTUTORS GROWTH ASSOCIATE PORTAL & CRM LOGIC
+# ==============================================================================
+
+PROPOSALS_DIR = UPLOADS_DIR / "proposals"
+
+ADMIN_ROLES = ("admin", "growth_manager", "corporate_staff", "finance")
+
+def generate_referral_id() -> str:
+    year = datetime.now(tz=UTC).strftime("%Y")
+    count_row = fetch_one("SELECT COUNT(*) as c FROM prospects")
+    next_num = (count_row["c"] if count_row else 0) + 1
+    return f"TT-GA-{year}-{next_num:05d}"
+
+
+def check_prospect_duplicate(email: str, phone: str, organization: str = "", full_name: str = "") -> dict[str, Any] | None:
+    norm_email = normalize_email(email) if email else ""
+    if norm_email:
+        p_row = fetch_one("SELECT id, referral_id, status FROM prospects WHERE LOWER(email) = ?", (norm_email,))
+        if p_row:
+            return {"type": "Email Match", "referral_id": p_row.get("referral_id"), "id": p_row["id"]}
+        u_row = fetch_one("SELECT id, email FROM users WHERE LOWER(email) = ?", (norm_email,))
+        if u_row:
+            return {"type": "Existing TekTutors Account Email Match", "referral_id": None, "id": u_row["id"]}
+
+    clean_phone = re.sub(r"\D", "", phone or "")
+    if clean_phone and len(clean_phone) >= 7:
+        rows = fetch_all("SELECT id, referral_id, phone_number, status FROM prospects")
+        for r in rows:
+            r_phone = re.sub(r"\D", "", r.get("phone_number") or "")
+            if r_phone and (r_phone == clean_phone or (len(clean_phone) >= 10 and clean_phone[-10:] == r_phone[-10:])):
+                return {"type": "Phone Number Match", "referral_id": r.get("referral_id"), "id": r["id"]}
+
+    if organization and full_name:
+        o_clean = organization.strip().lower()
+        n_clean = full_name.strip().lower()
+        p_row = fetch_one(
+            "SELECT id, referral_id, status FROM prospects WHERE LOWER(organization) = ? AND LOWER(full_name) = ?",
+            (o_clean, n_clean),
+        )
+        if p_row:
+            return {"type": "Organization & Contact Name Match", "referral_id": p_row.get("referral_id"), "id": p_row["id"]}
+
+    return None
+
+
+def create_audit_log(user_id: int | None, entity_type: str, entity_id: int, action: str, previous_value: str = "", new_value: str = "") -> None:
+    try:
+        db = get_db()
+        ip = client_ip_address() if request else "system"
+        now_str = timestamp_now()
+        db.execute(
+            """
+            INSERT INTO audit_logs (user_id, entity_type, entity_id, action, previous_value, new_value, ip_address, timestamp)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (user_id, entity_type, entity_id, action, str(previous_value or ""), str(new_value or ""), ip, now_str),
+        )
+    except Exception as exc:
+        app.logger.warning("Failed to record audit log: %s", exc)
+
+
+def get_growth_associate_profile(user_id: int) -> dict[str, Any] | None:
+    return fetch_one(
+        """
+        SELECT u.id as user_id, u.name, u.email, u.is_approved, u.is_suspended, u.created_at,
+               g.phone_number, g.whatsapp_number, g.location, g.country, g.communication_channel,
+               g.current_occupation, g.company_name, g.linkedin_url, g.network_areas, g.access_industries,
+               g.monthly_prospect_reach, g.agreed_to_terms, g.status as profile_status,
+               g.bank_name, g.account_number, g.account_name, g.payout_notes
+        FROM users u
+        LEFT JOIN growth_associate_profiles g ON g.user_id = u.id
+        WHERE u.id = ?
+        """,
+        (user_id,),
+    )
+
+
+def get_growth_associate_kpis(user_id: int | None = None) -> dict[str, Any]:
+    params = (user_id,) if user_id else ()
+    where_clause = "WHERE growth_associate_id = ?" if user_id else ""
+    where_prefix = "WHERE" if not user_id else "AND"
+
+    total_prospects = fetch_one(f"SELECT COUNT(*) as c FROM prospects {where_clause}", params)["c"]
+    new_prospects = fetch_one(f"SELECT COUNT(*) as c FROM prospects {where_clause} {where_prefix} status = 'Submitted'", params)["c"]
+    in_followup = fetch_one(f"SELECT COUNT(*) as c FROM prospects {where_clause} {where_prefix} status IN ('Contacted', 'Follow-up Requested')", params)["c"]
+    converted = fetch_one(f"SELECT COUNT(*) as c FROM prospects {where_clause} {where_prefix} status IN ('Converted', 'Commission Pending', 'Commission Approved', 'Commission Paid')", params)["c"]
+
+    comm_where = "WHERE growth_associate_id = ?" if user_id else ""
+    comm_prefix = "WHERE" if not user_id else "AND"
+
+    pending_comm = fetch_one(f"SELECT COALESCE(SUM(commission_amount), 0) as s FROM commissions {comm_where} {comm_prefix} commission_status IN ('Pending', 'Under Review')", params)["s"]
+    approved_comm = fetch_one(f"SELECT COALESCE(SUM(commission_amount), 0) as s FROM commissions {comm_where} {comm_prefix} commission_status = 'Approved'", params)["s"]
+    paid_comm = fetch_one(f"SELECT COALESCE(SUM(commission_amount), 0) as s FROM commissions {comm_where} {comm_prefix} commission_status = 'Paid'", params)["s"]
+
+    return {
+        "total_prospects": total_prospects,
+        "new_prospects": new_prospects,
+        "in_followup": in_followup,
+        "converted": converted,
+        "pending_commissions": pending_comm,
+        "approved_commissions": approved_comm,
+        "paid_commissions": paid_comm,
+    }
+
+
+# --- PUBLIC & AUTH ROUTES ---
+
+@app.route("/growth-associate")
+def growth_associate_landing():
+    return render_template(
+        "growth_associate_landing.html",
+        page_title="Growth Associate Program | TekTutors",
+        meta_description="Connect individuals and organizations to personalized data training opportunities and earn commission as a TekTutors Growth Associate.",
+        active_page="growth_associate",
+    )
+
+
+@app.route("/growth-associate/register", methods=["GET", "POST"])
+def growth_associate_register():
+    if g.user:
+        return redirect(url_for("dashboard"))
+
+    if request.method == "POST":
+        if public_form_rate_limited("ga_register", limit=5):
+            flash("Too many registration attempts. Please try again shortly.", "error")
+            return redirect(url_for("growth_associate_register"))
+
+        name = request.form.get("name", "").strip()
+        email = normalize_email(request.form.get("email", ""))
+        password = request.form.get("password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        phone_number = request.form.get("phone_number", "").strip()
+        whatsapp_number = request.form.get("whatsapp_number", "").strip()
+        location = request.form.get("location", "").strip()
+        country = request.form.get("country", "Nigeria").strip()
+        communication_channel = request.form.get("communication_channel", "Email").strip()
+
+        current_occupation = request.form.get("current_occupation", "").strip()
+        company_name = request.form.get("company_name", "").strip()
+        linkedin_url = request.form.get("linkedin_url", "").strip()
+        network_areas = request.form.get("network_areas", "").strip()
+        access_industries = request.form.get("access_industries", "").strip()
+        monthly_prospect_reach = request.form.get("monthly_prospect_reach", "").strip()
+        agreed_terms = request.form.get("agreed_to_terms")
+
+        if not all([name, email, password, phone_number, location, current_occupation]):
+            flash("Please fill in all required personal and professional fields.", "error")
+            return redirect(url_for("growth_associate_register"))
+
+        if not is_valid_email(email):
+            flash("Please provide a valid email address.", "error")
+            return redirect(url_for("growth_associate_register"))
+
+        if password != confirm_password:
+            flash("Passwords do not match.", "error")
+            return redirect(url_for("growth_associate_register"))
+
+        if len(password) < 8:
+            flash("Password must be at least 8 characters long.", "error")
+            return redirect(url_for("growth_associate_register"))
+
+        if not agreed_terms:
+            flash("You must agree to the TekTutors Growth Associate terms and commission guidelines.", "error")
+            return redirect(url_for("growth_associate_register"))
+
+        if get_user_by_email(email):
+            flash("An account with that email address already exists.", "error")
+            return redirect(url_for("growth_associate_register"))
+
+        now_str = timestamp_now()
+        pw_hash = generate_password_hash(password)
+        db = get_db()
+
+        cursor = db.execute(
+            """
+            INSERT INTO users (name, email, password_hash, role, is_approved, is_suspended, created_at)
+            VALUES (?, ?, ?, 'growth_associate', 0, 0, ?)
+            """,
+            (name, email, pw_hash, now_str),
+        )
+        user_id = cursor.lastrowid
+
+        db.execute(
+            """
+            INSERT INTO growth_associate_profiles (
+                user_id, phone_number, whatsapp_number, location, country, communication_channel,
+                current_occupation, company_name, linkedin_url, network_areas, access_industries,
+                monthly_prospect_reach, agreed_to_terms, status, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'pending', ?, ?)
+            """,
+            (
+                user_id, phone_number, whatsapp_number, location, country, communication_channel,
+                current_occupation, company_name, linkedin_url, network_areas, access_industries,
+                monthly_prospect_reach, now_str, now_str
+            ),
+        )
+        db.commit()
+
+        create_audit_log(user_id, "user", user_id, "Growth Associate Registered", "", "status=pending")
+
+        send_form_notification(
+            subject="New TekTutors Growth Associate Application",
+            body=f"New Growth Associate registered:\nName: {name}\nEmail: {email}\nOccupation: {current_occupation}\nPhone: {phone_number}\n\nReview in Admin Panel.",
+        )
+
+        return render_template(
+            "growth_associate_register.html",
+            page_title="Application Submitted | TekTutors",
+            submitted=True,
+            associate_name=name,
+            active_page="growth_associate",
+        )
+
+    return render_template(
+        "growth_associate_register.html",
+        page_title="Become a Growth Associate | TekTutors",
+        submitted=False,
+        active_page="growth_associate",
+    )
+
+
+@app.route("/growth-associate/login", methods=["GET", "POST"])
+def growth_associate_login():
+    if g.user:
+        return redirect(url_for("dashboard"))
+
+    if request.method == "POST":
+        email = normalize_email(request.form.get("email", ""))
+        password = request.form.get("password", "")
+        user = get_user_by_email(email)
+
+        if user is None or not check_password_hash(user["password_hash"], password):
+            flash("Invalid email or password.", "error")
+            return redirect(url_for("growth_associate_login"))
+
+        if user["role"] != "growth_associate" and user["role"] not in ADMIN_ROLES:
+            flash("This portal is reserved for TekTutors Growth Associates.", "error")
+            return redirect(url_for("growth_associate_login"))
+
+        if not is_user_approved(user):
+            flash("Thank you for your interest. Your Growth Associate application is under review by our admin team.", "info")
+            return redirect(url_for("growth_associate_login"))
+
+        if is_user_suspended(user):
+            flash("Your account has been suspended. Please contact TekTutors support.", "error")
+            return redirect(url_for("growth_associate_login"))
+
+        login_user(user)
+        flash(f"Welcome back, {user['name']}!", "success")
+        return redirect(url_for("growth_associate_dashboard"))
+
+    return render_template(
+        "growth_associate_login.html",
+        page_title="Growth Associate Login | TekTutors",
+        active_page="growth_associate",
+    )
+
+
+# --- GROWTH ASSOCIATE PORTAL ROUTES ---
+
+@app.route("/growth-associate/dashboard")
+@login_required("growth_associate")
+def growth_associate_dashboard():
+    profile = get_growth_associate_profile(g.user["id"])
+    kpis = get_growth_associate_kpis(g.user["id"])
+
+    recent_referrals = fetch_all(
+        """
+        SELECT p.*, c.commission_status, c.commission_amount
+        FROM prospects p
+        LEFT JOIN commissions c ON c.prospect_id = p.id
+        WHERE p.growth_associate_id = ?
+        ORDER BY p.submitted_at DESC
+        LIMIT 8
+        """,
+        (g.user["id"],),
+    )
+
+    return render_template(
+        "growth_associate_dashboard.html",
+        page_title="Growth Associate Dashboard | TekTutors",
+        profile=profile,
+        kpis=kpis,
+        recent_referrals=recent_referrals,
+        active_page="ga_dashboard",
+        active_subpage="dashboard",
+    )
+
+
+@app.route("/growth-associate/prospects")
+@login_required("growth_associate")
+def growth_associate_prospects():
+    search_q = request.args.get("q", "").strip()
+    status_filter = request.args.get("status", "").strip()
+    opp_filter = request.args.get("opp_type", "").strip()
+
+    sql = """
+        SELECT p.*, c.commission_status, c.commission_amount
+        FROM prospects p
+        LEFT JOIN commissions c ON c.prospect_id = p.id
+        WHERE p.growth_associate_id = ?
+    """
+    params: list[Any] = [g.user["id"]]
+
+    if search_q:
+        sql += " AND (p.full_name LIKE ? OR p.email LIKE ? OR p.organization LIKE ? OR p.referral_id LIKE ?)"
+        term = f"%{search_q}%"
+        params.extend([term, term, term, term])
+
+    if status_filter:
+        sql += " AND p.status = ?"
+        params.append(status_filter)
+
+    if opp_filter:
+        sql += " AND p.opportunity_type = ?"
+        params.append(opp_filter)
+
+    sql += " ORDER BY p.submitted_at DESC"
+    prospects = fetch_all(sql, tuple(params))
+
+    return render_template(
+        "growth_associate_prospects.html",
+        page_title="My Prospects & Referrals | TekTutors",
+        prospects=prospects,
+        search_q=search_q,
+        status_filter=status_filter,
+        opp_filter=opp_filter,
+        active_page="ga_dashboard",
+        active_subpage="prospects",
+    )
+
+
+@app.route("/growth-associate/prospects/new", methods=["GET", "POST"])
+@login_required("growth_associate")
+def growth_associate_prospect_new():
+    duplicate_warning = None
+
+    if request.method == "POST":
+        full_name = request.form.get("full_name", "").strip()
+        phone_number = request.form.get("phone_number", "").strip()
+        whatsapp_number = request.form.get("whatsapp_number", "").strip()
+        email = normalize_email(request.form.get("email", ""))
+        location = request.form.get("location", "").strip()
+        country = request.form.get("country", "Nigeria").strip()
+        organization = request.form.get("organization", "").strip()
+        job_title = request.form.get("job_title", "").strip()
+        preferred_contact_method = request.form.get("preferred_contact_method", "Phone Call").strip()
+
+        opportunity_type = request.form.get("opportunity_type", "Individual Training").strip()
+        training_interests_list = request.form.getlist("training_interests")
+        other_interest = request.form.get("other_training_interest", "").strip()
+        if other_interest:
+            training_interests_list.append(other_interest)
+        training_interests = ", ".join(training_interests_list) if training_interests_list else "Not sure / Needs consultation"
+
+        prospect_details = request.form.get("prospect_details", "").strip()
+        lead_temperature = request.form.get("lead_temperature", "Warm").strip()
+
+        try:
+            estimated_value = float(request.form.get("estimated_value", 0) or 0)
+        except ValueError:
+            estimated_value = 0.0
+
+        request_followup = bool(request.form.get("request_followup"))
+        preferred_followup_method = request.form.get("preferred_followup_method", "Phone Call").strip()
+        preferred_followup_time = request.form.get("preferred_followup_time", "Any time").strip()
+        followup_instructions = request.form.get("followup_instructions", "").strip()
+
+        if not all([full_name, phone_number, email]):
+            flash("Full name, phone number, and email are required.", "error")
+            return render_template(
+                "growth_associate_prospect_new.html",
+                page_title="Submit New Prospect | TekTutors",
+                active_page="ga_dashboard",
+                active_subpage="new_prospect",
+            )
+
+        # Check duplicate prospect protection
+        dup_match = check_prospect_duplicate(email, phone_number, organization, full_name)
+        override_duplicate = bool(request.form.get("override_duplicate"))
+
+        if dup_match and not override_duplicate:
+            duplicate_warning = {
+                "match_type": dup_match["type"],
+                "message": "This prospect may already exist in the TekTutors system. Please confirm before proceeding.",
+            }
+            return render_template(
+                "growth_associate_prospect_new.html",
+                page_title="Submit New Prospect | TekTutors",
+                duplicate_warning=duplicate_warning,
+                form_data=request.form,
+                active_page="ga_dashboard",
+                active_subpage="new_prospect",
+            )
+
+        ref_id = generate_referral_id()
+        now_str = timestamp_now()
+        is_dup = 1 if dup_match else 0
+        dup_notes = f"Flagged duplicate match: {dup_match['type']}" if dup_match else ""
+
+        db = get_db()
+        cursor = db.execute(
+            """
+            INSERT INTO prospects (
+                referral_id, growth_associate_id, full_name, phone_number, whatsapp_number, email,
+                location, country, organization, job_title, preferred_contact_method, opportunity_type,
+                training_interests, prospect_details, lead_temperature, estimated_value, status,
+                is_duplicate, duplicate_notes, submitted_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Submitted', ?, ?, ?, ?)
+            """,
+            (
+                ref_id, g.user["id"], full_name, phone_number, whatsapp_number, email,
+                location, country, organization, job_title, preferred_contact_method, opportunity_type,
+                training_interests, prospect_details, lead_temperature, estimated_value,
+                is_dup, dup_notes, now_str, now_str
+            ),
+        )
+        prospect_id = cursor.lastrowid
+
+        # Insert commission entry
+        db.execute(
+            """
+            INSERT INTO commissions (prospect_id, growth_associate_id, commission_amount, commission_status, payment_approval_status, created_at, updated_at)
+            VALUES (?, ?, 0.0, 'Pending', 'Unapproved', ?, ?)
+            """,
+            (prospect_id, g.user["id"], now_str, now_str),
+        )
+
+        # Create follow-up request if selected
+        if request_followup:
+            db.execute(
+                """
+                INSERT INTO follow_up_requests (
+                    prospect_id, growth_associate_id, preferred_contact_method, preferred_contact_time,
+                    reason, additional_instructions, status, requested_at, updated_at
+                ) VALUES (?, ?, ?, ?, 'Initial Follow-up Requested by Associate', ?, 'Requested', ?, ?)
+                """,
+                (prospect_id, g.user["id"], preferred_followup_method, preferred_followup_time, followup_instructions, now_str, now_str),
+            )
+            db.execute("UPDATE prospects SET status = 'Follow-up Requested' WHERE id = ?", (prospect_id,))
+
+        db.commit()
+        create_audit_log(g.user["id"], "prospect", prospect_id, "Prospect Submitted", "", f"referral_id={ref_id}")
+
+        send_form_notification(
+            subject=f"New Growth Referral Submitted [{ref_id}]",
+            body=f"Referral ID: {ref_id}\nSubmitted by: {g.user['name']}\nProspect: {full_name} ({organization or 'Individual'})\nInterest: {training_interests}\nFollow-up requested: {'Yes' if request_followup else 'No'}",
+        )
+
+        flash(f"Prospect '{full_name}' submitted successfully with Referral ID: {ref_id}", "success")
+        return redirect(url_for("growth_associate_prospect_detail", prospect_id=prospect_id))
+
+    return render_template(
+        "growth_associate_prospect_new.html",
+        page_title="Submit New Prospect | TekTutors",
+        active_page="ga_dashboard",
+        active_subpage="new_prospect",
+    )
+
+
+@app.route("/growth-associate/prospects/<int:prospect_id>")
+@login_required("growth_associate")
+def growth_associate_prospect_detail(prospect_id: int):
+    prospect = fetch_one(
+        """
+        SELECT p.*, c.commission_status, c.commission_amount, c.payment_approval_status, c.approved_at, c.paid_at
+        FROM prospects p
+        LEFT JOIN commissions c ON c.prospect_id = p.id
+        WHERE p.id = ? AND p.growth_associate_id = ?
+        """,
+        (prospect_id, g.user["id"]),
+    )
+
+    if not prospect:
+        flash("Referral not found or access denied.", "error")
+        return redirect(url_for("growth_associate_prospects"))
+
+    followups = fetch_all(
+        "SELECT * FROM follow_up_requests WHERE prospect_id = ? ORDER BY requested_at DESC",
+        (prospect_id,),
+    )
+
+    audits = fetch_all(
+        "SELECT action, timestamp FROM audit_logs WHERE entity_type = 'prospect' AND entity_id = ? ORDER BY timestamp DESC",
+        (prospect_id,),
+    )
+
+    return render_template(
+        "growth_associate_prospect_detail.html",
+        page_title=f"Referral {prospect['referral_id']} | TekTutors",
+        prospect=prospect,
+        followups=followups,
+        audits=audits,
+        active_page="ga_dashboard",
+        active_subpage="prospects",
+    )
+
+
+@app.route("/growth-associate/follow-ups", methods=["GET", "POST"])
+@login_required("growth_associate")
+def growth_associate_followups():
+    if request.method == "POST":
+        prospect_id = request.form.get("prospect_id")
+        method = request.form.get("preferred_contact_method", "Phone Call")
+        time_slot = request.form.get("preferred_contact_time", "Any time")
+        reason = request.form.get("reason", "").strip()
+        instructions = request.form.get("additional_instructions", "").strip()
+
+        if not prospect_id:
+            flash("Please select a prospect for follow-up.", "error")
+            return redirect(url_for("growth_associate_followups"))
+
+        now_str = timestamp_now()
+        db = get_db()
+        db.execute(
+            """
+            INSERT INTO follow_up_requests (
+                prospect_id, growth_associate_id, preferred_contact_method, preferred_contact_time,
+                reason, additional_instructions, status, requested_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, 'Requested', ?, ?)
+            """,
+            (prospect_id, g.user["id"], method, time_slot, reason, instructions, now_str, now_str),
+        )
+        db.execute("UPDATE prospects SET status = 'Follow-up Requested' WHERE id = ? AND growth_associate_id = ?", (prospect_id, g.user["id"]))
+        db.commit()
+
+        flash("Follow-up request submitted to TekTutors mentors.", "success")
+        return redirect(url_for("growth_associate_followups"))
+
+    followup_requests = fetch_all(
+        """
+        SELECT f.*, p.full_name as prospect_name, p.referral_id, p.organization, u.name as staff_name
+        FROM follow_up_requests f
+        JOIN prospects p ON p.id = f.prospect_id
+        LEFT JOIN users u ON u.id = f.assigned_staff_id
+        WHERE f.growth_associate_id = ?
+        ORDER BY f.requested_at DESC
+        """,
+        (g.user["id"],),
+    )
+
+    my_prospects = fetch_all("SELECT id, referral_id, full_name, organization FROM prospects WHERE growth_associate_id = ? ORDER BY full_name ASC", (g.user["id"],))
+
+    return render_template(
+        "growth_associate_followups.html",
+        page_title="Follow-up Requests | TekTutors",
+        followup_requests=followup_requests,
+        my_prospects=my_prospects,
+        active_page="ga_dashboard",
+        active_subpage="followups",
+    )
+
+
+@app.route("/growth-associate/corporate-opportunities", methods=["GET", "POST"])
+@login_required("growth_associate")
+def growth_associate_corporate():
+    if request.method == "POST":
+        org_name = request.form.get("organization_name", "").strip()
+        org_type = request.form.get("organization_type", "Company").strip()
+        website = request.form.get("website", "").strip()
+        location = request.form.get("location", "").strip()
+
+        contact_person = request.form.get("contact_person", "").strip()
+        contact_position = request.form.get("contact_position", "").strip()
+        contact_phone = request.form.get("contact_phone", "").strip()
+        contact_email = normalize_email(request.form.get("contact_email", ""))
+
+        training_topic = request.form.get("training_topic", "").strip()
+        skills_required = request.form.get("skills_required", "").strip()
+        try:
+            participant_count = int(request.form.get("participant_count", 1) or 1)
+        except ValueError:
+            participant_count = 1
+        training_level = request.form.get("training_level", "Intermediate").strip()
+        delivery_mode = request.form.get("delivery_mode", "Online").strip()
+        preferred_date = request.form.get("preferred_date", "").strip()
+        expected_duration = request.form.get("expected_duration", "").strip()
+        training_objectives = request.form.get("training_objectives", "").strip()
+        additional_requirements = request.form.get("additional_requirements", "").strip()
+
+        identification_source = request.form.get("identification_source", "").strip()
+        expressed_interest = request.form.get("expressed_interest", "Yes").strip()
+        meeting_taken = request.form.get("meeting_taken", "No").strip()
+        existing_budget = request.form.get("existing_budget", "Under Discussion").strip()
+        try:
+            estimated_budget = float(request.form.get("estimated_budget", 0) or 0)
+        except ValueError:
+            estimated_budget = 0.0
+        expected_decision_date = request.form.get("expected_decision_date", "").strip()
+        request_proposal = bool(request.form.get("request_proposal"))
+
+        if not all([org_name, contact_person, contact_phone, contact_email, training_topic]):
+            flash("Please fill in organization name, contact details, and training topic.", "error")
+            return redirect(url_for("growth_associate_corporate"))
+
+        now_str = timestamp_now()
+        db = get_db()
+
+        cursor = db.execute(
+            """
+            INSERT INTO corporate_opportunities (
+                growth_associate_id, organization_name, organization_type, website, location,
+                contact_person, contact_position, contact_phone, contact_email, training_topic,
+                skills_required, participant_count, training_level, delivery_mode, preferred_date,
+                expected_duration, training_objectives, additional_requirements, identification_source,
+                expressed_interest, meeting_taken, existing_budget, estimated_budget, expected_decision_date,
+                proposal_requested, status, submitted_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Submitted', ?, ?)
+            """,
+            (
+                g.user["id"], org_name, org_type, website, location,
+                contact_person, contact_position, contact_phone, contact_email, training_topic,
+                skills_required, participant_count, training_level, delivery_mode, preferred_date,
+                expected_duration, training_objectives, additional_requirements, identification_source,
+                expressed_interest, meeting_taken, existing_budget, estimated_budget, expected_decision_date,
+                1 if request_proposal else 0, now_str, now_str
+            ),
+        )
+        opp_id = cursor.lastrowid
+
+        if request_proposal:
+            db.execute(
+                """
+                INSERT INTO proposal_requests (corporate_opportunity_id, growth_associate_id, title, requirements, status, created_at, updated_at)
+                VALUES (?, ?, ?, ?, 'Requested', ?, ?)
+                """,
+                (opp_id, g.user["id"], f"Proposal for {org_name}", training_objectives or training_topic, now_str, now_str),
+            )
+
+        db.commit()
+        create_audit_log(g.user["id"], "corporate_opportunity", opp_id, "Corporate Opportunity Submitted", "", f"org={org_name}")
+
+        send_form_notification(
+            subject=f"New Corporate Training Lead: {org_name}",
+            body=f"Organization: {org_name}\nType: {org_type}\nContact: {contact_person} ({contact_email})\nParticipants: {participant_count}\nProposal Requested: {'Yes' if request_proposal else 'No'}",
+        )
+
+        flash("Corporate opportunity submitted successfully.", "success")
+        return redirect(url_for("growth_associate_corporate"))
+
+    opportunities = fetch_all(
+        "SELECT * FROM corporate_opportunities WHERE growth_associate_id = ? ORDER BY submitted_at DESC",
+        (g.user["id"],),
+    )
+
+    return render_template(
+        "growth_associate_corporate.html",
+        page_title="Corporate & Institutional Opportunities | TekTutors",
+        opportunities=opportunities,
+        active_page="ga_dashboard",
+        active_subpage="corporate",
+    )
+
+
+@app.route("/growth-associate/proposals")
+@login_required("growth_associate")
+def growth_associate_proposals():
+    proposal_items = fetch_all(
+        """
+        SELECT pr.id as request_id, pr.title, pr.status as request_status, pr.created_at,
+               co.organization_name, p.id as proposal_id, p.stored_name, p.original_name, p.status as proposal_file_status
+        FROM proposal_requests pr
+        LEFT JOIN corporate_opportunities co ON co.id = pr.corporate_opportunity_id
+        LEFT JOIN proposals p ON p.proposal_request_id = pr.id
+        WHERE pr.growth_associate_id = ?
+        ORDER BY pr.created_at DESC
+        """,
+        (g.user["id"],),
+    )
+
+    return render_template(
+        "growth_associate_proposals.html",
+        page_title="Corporate Proposals | TekTutors",
+        proposal_items=proposal_items,
+        active_page="ga_dashboard",
+        active_subpage="proposals",
+    )
+
+
+@app.route("/growth-associate/proposals/<int:proposal_id>/download")
+@login_required("growth_associate")
+def growth_associate_proposal_download(proposal_id: int):
+    prop = fetch_one(
+        "SELECT * FROM proposals WHERE id = ? AND growth_associate_id = ?",
+        (proposal_id, g.user["id"]),
+    )
+
+    if not prop:
+        flash("Proposal document not found.", "error")
+        return redirect(url_for("growth_associate_proposals"))
+
+    file_path = PROPOSALS_DIR / prop["stored_name"]
+    if not file_path.exists():
+        flash("Proposal file does not exist on server.", "error")
+        return redirect(url_for("growth_associate_proposals"))
+
+    return send_from_directory(
+        PROPOSALS_DIR,
+        prop["stored_name"],
+        as_attachment=True,
+        download_name=prop["original_name"],
+    )
+
+
+@app.route("/growth-associate/payments")
+@login_required("growth_associate")
+def growth_associate_payments():
+    commissions = fetch_all(
+        """
+        SELECT c.*, p.referral_id, p.full_name as prospect_name, p.organization, p.opportunity_type, p.submitted_at as ref_date
+        FROM commissions c
+        JOIN prospects p ON p.id = c.prospect_id
+        WHERE c.growth_associate_id = ?
+        ORDER BY c.created_at DESC
+        """,
+        (g.user["id"],),
+    )
+
+    profile = get_growth_associate_profile(g.user["id"])
+    kpis = get_growth_associate_kpis(g.user["id"])
+
+    return render_template(
+        "growth_associate_payments.html",
+        page_title="My Commissions & Payments | TekTutors",
+        commissions=commissions,
+        profile=profile,
+        kpis=kpis,
+        active_page="ga_dashboard",
+        active_subpage="payments",
+    )
+
+
+@app.route("/growth-associate/profile", methods=["GET", "POST"])
+@login_required("growth_associate")
+def growth_associate_profile():
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        phone_number = request.form.get("phone_number", "").strip()
+        whatsapp_number = request.form.get("whatsapp_number", "").strip()
+        location = request.form.get("location", "").strip()
+        current_occupation = request.form.get("current_occupation", "").strip()
+        company_name = request.form.get("company_name", "").strip()
+        linkedin_url = request.form.get("linkedin_url", "").strip()
+
+        bank_name = request.form.get("bank_name", "").strip()
+        account_number = request.form.get("account_number", "").strip()
+        account_name = request.form.get("account_name", "").strip()
+        payout_notes = request.form.get("payout_notes", "").strip()
+
+        now_str = timestamp_now()
+        db = get_db()
+
+        db.execute("UPDATE users SET name = ? WHERE id = ?", (name, g.user["id"]))
+
+        db.execute(
+            """
+            UPDATE growth_associate_profiles
+            SET phone_number = ?, whatsapp_number = ?, location = ?, current_occupation = ?,
+                company_name = ?, linkedin_url = ?, bank_name = ?, account_number = ?,
+                account_name = ?, payout_notes = ?, updated_at = ?
+            WHERE user_id = ?
+            """,
+            (
+                phone_number, whatsapp_number, location, current_occupation, company_name,
+                linkedin_url, bank_name, account_number, account_name, payout_notes, now_str, g.user["id"]
+            ),
+        )
+        db.commit()
+
+        flash("Profile and payment information updated successfully.", "success")
+        return redirect(url_for("growth_associate_profile"))
+
+    profile = get_growth_associate_profile(g.user["id"])
+
+    return render_template(
+        "growth_associate_profile.html",
+        page_title="My Growth Associate Profile | TekTutors",
+        profile=profile,
+        active_page="ga_dashboard",
+        active_subpage="profile",
+    )
+
+
+@app.route("/growth-associate/help")
+@login_required("growth_associate")
+def growth_associate_help():
+    return render_template(
+        "growth_associate_help.html",
+        page_title="Growth Associate Support & FAQ | TekTutors",
+        active_page="ga_dashboard",
+        active_subpage="help",
+    )
+
+
+# --- ADMIN GROWTH ASSOCIATE MANAGEMENT ROUTES ---
+
+@app.route("/admin/growth-associates")
+@login_required(ADMIN_ROLES)
+def admin_growth_associates():
+    status_filter = request.args.get("status", "").strip()
+    sql = """
+        SELECT u.id as user_id, u.name, u.email, u.is_approved, u.is_suspended, u.created_at,
+               g.phone_number, g.location, g.current_occupation, g.status as profile_status
+        FROM users u
+        JOIN growth_associate_profiles g ON g.user_id = u.id
+        WHERE u.role = 'growth_associate'
+    """
+    params: list[Any] = []
+    if status_filter:
+        sql += " AND g.status = ?"
+        params.append(status_filter)
+
+    sql += " ORDER BY u.created_at DESC"
+    associates = fetch_all(sql, tuple(params))
+
+    return render_template(
+        "admin_growth_associates.html",
+        page_title="Manage Growth Associates | TekTutors Admin",
+        associates=associates,
+        status_filter=status_filter,
+        active_page="lms",
+        active_subpage="admin_ga",
+    )
+
+
+@app.route("/admin/growth-associates/<int:user_id>/status", methods=["POST"])
+@login_required(ADMIN_ROLES)
+def admin_growth_associate_status(user_id: int):
+    new_status = request.form.get("status", "").strip().lower()
+    now_str = timestamp_now()
+    db = get_db()
+
+    user = get_user_by_id(user_id)
+    if not user or user["role"] != "growth_associate":
+        flash("Invalid Growth Associate account.", "error")
+        return redirect(url_for("admin_growth_associates"))
+
+    if new_status == "approve":
+        db.execute("UPDATE users SET is_approved = 1, approved_at = ? WHERE id = ?", (now_str, user_id))
+        db.execute("UPDATE growth_associate_profiles SET status = 'approved', updated_at = ? WHERE user_id = ?", (now_str, user_id))
+        db.commit()
+        create_audit_log(g.user["id"], "user", user_id, "Approve Associate", "pending", "approved")
+        flash(f"Approved Growth Associate '{user['name']}'.", "success")
+
+    elif new_status == "reject":
+        db.execute("UPDATE users SET is_approved = 0 WHERE id = ?", (user_id,))
+        db.execute("UPDATE growth_associate_profiles SET status = 'rejected', updated_at = ? WHERE user_id = ?", (now_str, user_id))
+        db.commit()
+        create_audit_log(g.user["id"], "user", user_id, "Reject Associate", "pending", "rejected")
+        flash(f"Rejected Growth Associate application for '{user['name']}'.", "info")
+
+    elif new_status == "suspend":
+        db.execute("UPDATE users SET is_suspended = 1, suspended_at = ? WHERE id = ?", (now_str, user_id))
+        db.execute("UPDATE growth_associate_profiles SET status = 'suspended', updated_at = ? WHERE user_id = ?", (now_str, user_id))
+        db.commit()
+        create_audit_log(g.user["id"], "user", user_id, "Suspend Associate", "approved", "suspended")
+        flash(f"Suspended Growth Associate '{user['name']}'.", "warning")
+
+    elif new_status == "reactivate":
+        db.execute("UPDATE users SET is_suspended = 0, is_approved = 1 WHERE id = ?", (user_id,))
+        db.execute("UPDATE growth_associate_profiles SET status = 'approved', updated_at = ? WHERE user_id = ?", (now_str, user_id))
+        db.commit()
+        create_audit_log(g.user["id"], "user", user_id, "Reactivate Associate", "suspended", "approved")
+        flash(f"Reactivated Growth Associate '{user['name']}'.", "success")
+
+    return redirect(url_for("admin_growth_associates"))
+
+
+@app.route("/admin/referrals")
+@login_required(ADMIN_ROLES)
+def admin_referrals():
+    status_filter = request.args.get("status", "").strip()
+    search_q = request.args.get("q", "").strip()
+
+    sql = """
+        SELECT p.*, u.name as associate_name, u.email as associate_email,
+               c.commission_amount, c.commission_status
+        FROM prospects p
+        JOIN users u ON u.id = p.growth_associate_id
+        LEFT JOIN commissions c ON c.prospect_id = p.id
+        WHERE 1=1
+    """
+    params: list[Any] = []
+
+    if status_filter:
+        sql += " AND p.status = ?"
+        params.append(status_filter)
+
+    if search_q:
+        sql += " AND (p.full_name LIKE ? OR p.referral_id LIKE ? OR p.organization LIKE ? OR u.name LIKE ?)"
+        term = f"%{search_q}%"
+        params.extend([term, term, term, term])
+
+    sql += " ORDER BY p.submitted_at DESC"
+    prospects = fetch_all(sql, tuple(params))
+
+    return render_template(
+        "admin_referrals.html",
+        page_title="Referral CRM Management | TekTutors Admin",
+        prospects=prospects,
+        status_filter=status_filter,
+        search_q=search_q,
+        active_page="lms",
+        active_subpage="admin_referrals",
+    )
+
+
+@app.route("/admin/referrals/<int:prospect_id>/status", methods=["POST"])
+@login_required(ADMIN_ROLES)
+def admin_referral_status(prospect_id: int):
+    new_status = request.form.get("status", "").strip()
+    commission_amount = request.form.get("commission_amount")
+
+    prospect = fetch_one("SELECT * FROM prospects WHERE id = ?", (prospect_id,))
+    if not prospect:
+        flash("Referral record not found.", "error")
+        return redirect(url_for("admin_referrals"))
+
+    prev_status = prospect["status"]
+    now_str = timestamp_now()
+    db = get_db()
+
+    db.execute("UPDATE prospects SET status = ?, updated_at = ? WHERE id = ?", (new_status, now_str, prospect_id))
+
+    if commission_amount is not None:
+        try:
+            amt = float(commission_amount)
+            db.execute(
+                """
+                UPDATE commissions
+                SET commission_amount = ?, updated_at = ?
+                WHERE prospect_id = ?
+                """,
+                (amt, now_str, prospect_id),
+            )
+        except ValueError:
+            pass
+
+    if new_status == "Converted":
+        db.execute(
+            """
+            UPDATE commissions
+            SET commission_status = 'Under Review', updated_at = ?
+            WHERE prospect_id = ?
+            """,
+            (now_str, prospect_id),
+        )
+
+    db.commit()
+    create_audit_log(g.user["id"], "prospect", prospect_id, f"Status changed to '{new_status}'", prev_status, new_status)
+
+    flash(f"Referral {prospect['referral_id']} status updated to '{new_status}'.", "success")
+    return redirect(url_for("admin_referrals"))
+
+
+@app.route("/admin/follow-ups", methods=["GET", "POST"])
+@login_required(ADMIN_ROLES)
+def admin_followups():
+    if request.method == "POST":
+        request_id = request.form.get("request_id")
+        assigned_staff_id = request.form.get("assigned_staff_id")
+        status = request.form.get("status", "In Progress").strip()
+        notes = request.form.get("internal_notes", "").strip()
+
+        if request_id:
+            now_str = timestamp_now()
+            db = get_db()
+            db.execute(
+                """
+                UPDATE follow_up_requests
+                SET assigned_staff_id = ?, status = ?, internal_notes = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (assigned_staff_id or None, status, notes, now_str, request_id),
+            )
+            db.commit()
+            flash("Follow-up task updated successfully.", "success")
+            return redirect(url_for("admin_followups"))
+
+    followups = fetch_all(
+        """
+        SELECT f.*, p.full_name as prospect_name, p.phone_number as prospect_phone, p.email as prospect_email, p.referral_id,
+               u.name as associate_name, s.name as staff_name
+        FROM follow_up_requests f
+        JOIN prospects p ON p.id = f.prospect_id
+        JOIN users u ON u.id = f.growth_associate_id
+        LEFT JOIN users s ON s.id = f.assigned_staff_id
+        ORDER BY f.requested_at DESC
+        """
+    )
+
+    staff_members = fetch_all("SELECT id, name, role FROM users WHERE role IN ('admin', 'mentor', 'growth_manager') ORDER BY name ASC")
+
+    return render_template(
+        "admin_followups.html",
+        page_title="Manage Follow-up Tasks | TekTutors Admin",
+        followups=followups,
+        staff_members=staff_members,
+        active_page="lms",
+        active_subpage="admin_followups",
+    )
+
+
+@app.route("/admin/corporate-opportunities")
+@login_required(ADMIN_ROLES)
+def admin_corporate_opportunities():
+    opportunities = fetch_all(
+        """
+        SELECT c.*, u.name as associate_name, u.email as associate_email
+        FROM corporate_opportunities c
+        JOIN users u ON u.id = c.growth_associate_id
+        ORDER BY c.submitted_at DESC
+        """
+    )
+
+    return render_template(
+        "admin_corporate.html",
+        page_title="Corporate Opportunities | TekTutors Admin",
+        opportunities=opportunities,
+        active_page="lms",
+        active_subpage="admin_corporate",
+    )
+
+
+@app.route("/admin/proposals", methods=["GET", "POST"])
+@login_required(ADMIN_ROLES)
+def admin_proposals():
+    if request.method == "POST":
+        proposal_request_id = request.form.get("proposal_request_id")
+        title = request.form.get("title", "").strip()
+        description = request.form.get("description", "").strip()
+        file_obj = request.files.get("proposal_file")
+
+        if not proposal_request_id or not file_obj or not file_obj.filename:
+            flash("Please choose a proposal request and upload a document file.", "error")
+            return redirect(url_for("admin_proposals"))
+
+        req_row = fetch_one("SELECT * FROM proposal_requests WHERE id = ?", (proposal_request_id,))
+        if not req_row:
+            flash("Invalid proposal request ID.", "error")
+            return redirect(url_for("admin_proposals"))
+
+        upload_res = store_uploaded_file(file_obj, PROPOSALS_DIR, "proposal")
+        now_str = timestamp_now()
+        db = get_db()
+
+        db.execute(
+            """
+            INSERT INTO proposals (proposal_request_id, growth_associate_id, title, description, stored_name, original_name, relative_path, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'Ready', ?)
+            """,
+            (
+                proposal_request_id, req_row["growth_associate_id"], title or req_row["title"],
+                description, upload_res["stored_name"], upload_res["original_name"],
+                upload_res["relative_path"], now_str
+            ),
+        )
+
+        db.execute("UPDATE proposal_requests SET status = 'Ready', updated_at = ? WHERE id = ?", (now_str, proposal_request_id))
+        db.commit()
+
+        create_audit_log(g.user["id"], "proposal", proposal_request_id, "Proposal Uploaded", "", upload_res["original_name"])
+
+        flash("Official training proposal document uploaded and notified to Growth Associate.", "success")
+        return redirect(url_for("admin_proposals"))
+
+    proposal_requests = fetch_all(
+        """
+        SELECT pr.*, u.name as associate_name, co.organization_name
+        FROM proposal_requests pr
+        JOIN users u ON u.id = pr.growth_associate_id
+        LEFT JOIN corporate_opportunities co ON co.id = pr.corporate_opportunity_id
+        ORDER BY pr.created_at DESC
+        """
+    )
+
+    uploaded_proposals = fetch_all(
+        """
+        SELECT p.*, pr.title as request_title, u.name as associate_name
+        FROM proposals p
+        JOIN proposal_requests pr ON pr.id = p.proposal_request_id
+        JOIN users u ON u.id = p.growth_associate_id
+        ORDER BY p.created_at DESC
+        """
+    )
+
+    return render_template(
+        "admin_proposals.html",
+        page_title="Corporate Proposals Management | TekTutors Admin",
+        proposal_requests=proposal_requests,
+        uploaded_proposals=uploaded_proposals,
+        active_page="lms",
+        active_subpage="admin_proposals",
+    )
+
+
+@app.route("/admin/commissions", methods=["GET", "POST"])
+@login_required(ADMIN_ROLES)
+def admin_commissions():
+    if request.method == "POST":
+        commission_id = request.form.get("commission_id")
+        action = request.form.get("action", "").strip()
+        amount_val = request.form.get("amount")
+        notes = request.form.get("notes", "").strip()
+
+        comm = fetch_one("SELECT * FROM commissions WHERE id = ?", (commission_id,))
+        if not comm:
+            flash("Commission record not found.", "error")
+            return redirect(url_for("admin_commissions"))
+
+        now_str = timestamp_now()
+        db = get_db()
+
+        if action == "approve":
+            try:
+                amt = float(amount_val) if amount_val else float(comm["commission_amount"])
+            except ValueError:
+                amt = float(comm["commission_amount"])
+
+            db.execute(
+                """
+                UPDATE commissions
+                SET commission_amount = ?, commission_status = 'Approved', payment_approval_status = 'Approved',
+                    approved_by = ?, approved_at = ?, notes = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (amt, g.user["id"], now_str, notes, now_str, commission_id),
+            )
+            db.execute("UPDATE prospects SET status = 'Commission Approved' WHERE id = ?", (comm["prospect_id"],))
+            db.commit()
+            create_audit_log(g.user["id"], "commission", commission_id, "Commission Approved", f"amt={comm['commission_amount']}", f"amt={amt}")
+            flash("Commission approved successfully.", "success")
+
+        elif action == "mark_paid":
+            db.execute(
+                """
+                UPDATE commissions
+                SET commission_status = 'Paid', paid_at = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (now_str, now_str, commission_id),
+            )
+            db.execute("UPDATE prospects SET status = 'Commission Paid' WHERE id = ?", (comm["prospect_id"],))
+            db.commit()
+            create_audit_log(g.user["id"], "commission", commission_id, "Commission Marked Paid", "Approved", "Paid")
+            flash("Commission marked as Paid.", "success")
+
+        return redirect(url_for("admin_commissions"))
+
+    commissions = fetch_all(
+        """
+        SELECT c.*, p.referral_id, p.full_name as prospect_name, p.organization, p.status as prospect_status,
+               u.name as associate_name, u.email as associate_email,
+               g.bank_name, g.account_number, g.account_name
+        FROM commissions c
+        JOIN prospects p ON p.id = c.prospect_id
+        JOIN users u ON u.id = c.growth_associate_id
+        LEFT JOIN growth_associate_profiles g ON g.user_id = u.id
+        ORDER BY c.created_at DESC
+        """
+    )
+
+    kpis = get_growth_associate_kpis()
+
+    return render_template(
+        "admin_commissions.html",
+        page_title="Commission Approvals & Payouts | TekTutors Admin",
+        commissions=commissions,
+        kpis=kpis,
+        active_page="lms",
+        active_subpage="admin_commissions",
+    )
+
+
+@app.route("/admin/growth-associates/export")
+@login_required(ADMIN_ROLES)
+def admin_export_reports():
+    report_type = request.args.get("type", "referrals").strip()
+
+    if report_type == "associates":
+        rows = fetch_all(
+            """
+            SELECT u.name, u.email, g.phone_number, g.location, g.current_occupation, g.status, u.created_at
+            FROM users u
+            JOIN growth_associate_profiles g ON g.user_id = u.id
+            WHERE u.role = 'growth_associate'
+            ORDER BY u.created_at DESC
+            """
+        )
+        fieldnames = ["name", "email", "phone_number", "location", "current_occupation", "status", "created_at"]
+        filename = "growth_associates_report.csv"
+    else:
+        rows = fetch_all(
+            """
+            SELECT p.referral_id, p.full_name as prospect_name, p.phone_number, p.email, p.organization,
+                   p.opportunity_type, p.training_interests, p.status, p.submitted_at, u.name as associate_name
+            FROM prospects p
+            JOIN users u ON u.id = p.growth_associate_id
+            ORDER BY p.submitted_at DESC
+            """
+        )
+        fieldnames = ["referral_id", "prospect_name", "phone_number", "email", "organization", "opportunity_type", "training_interests", "status", "submitted_at", "associate_name"]
+        filename = "referrals_report.csv"
+
+    output = []
+    output.append(",".join(fieldnames))
+    for r in rows:
+        row_str = ",".join([f'"{str(r.get(f, "")).replace(chr(34), chr(34)+chr(34))}"' for f in fieldnames])
+        output.append(row_str)
+
+    csv_content = "\n".join(output)
+    response = make_response(csv_content)
+    response.headers["Content-Type"] = "text/csv; charset=utf-8"
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    return response
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    import traceback
+    from pathlib import Path
+    from datetime import datetime
+    log_dir = Path(__file__).resolve().parent / "logs"
+    log_dir.mkdir(exist_ok=True)
+    log_file = log_dir / "flask_errors.log"
+    try:
+        with open(log_file, "a", encoding="utf-8") as f:
+            f.write(f"=== ERROR AT {datetime.now()} ===\n")
+            f.write(f"Request Path: {request.path}\n")
+            f.write(f"Request Method: {request.method}\n")
+            f.write(traceback.format_exc())
+            f.write("\n\n")
+    except Exception:
+        pass
+    return "Internal Server Error", 500
 
 
 if __name__ == "__main__":
     app.run(debug=not IS_PRODUCTION)
+

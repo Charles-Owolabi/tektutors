@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <p class="kicker">TekTutors CRM Administration</p>
+            <h2>Corporate & Institutional Lead Pipeline</h2>
+        </div>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-light">Back to LMS Admin</a>
+    </div>
+
+    <div class="card p-4">
+        {% if opportunities %}
+        <div class="table-responsive">
+            <table class="table-styled">
+                <thead>
+                    <tr>
+                        <th>Organization</th>
+                        <th>Contact Person</th>
+                        <th>Training Requirements</th>
+                        <th>Associate</th>
+                        <th>Proposal Requested</th>
+                        <th>Submitted</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for o in opportunities %}
+                    <tr>
+                        <td>
+                            <strong>{{ o.organization_name }}</strong><br>
+                            <small class="text-muted">{{ o.organization_type }} ({{ o.location }})</small>
+                        </td>
+                        <td>
+                            <strong>{{ o.contact_person }}</strong> ({{ o.contact_position or 'N/A' }})<br>
+                            <small>{{ o.contact_phone }} | {{ o.contact_email }}</small>
+                        </td>
+                        <td>
+                            <strong>{{ o.training_topic }}</strong><br>
+                            <small class="text-muted">{{ o.participant_count }} participants | Mode: {{ o.delivery_mode }}</small>
+                        </td>
+                        <td>{{ o.associate_name }}</td>
+                        <td>
+                            {% if o.proposal_requested %}
+                            <span class="badge badge-info">Yes</span>
+                            {% else %}
+                            <span class="text-muted">No</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ o.submitted_at[:10] }}</td>
+                        <td>
+                            <span class="status-badge status-{{ o.status|lower|replace(' ', '-') }}">{{ o.status }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center p-4">No corporate opportunities submitted yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

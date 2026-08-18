@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="ga-layout container my-4">
+    <aside class="ga-sidebar card p-3">
+        <nav class="ga-nav">
+            <a href="{{ url_for('growth_associate_dashboard') }}" class="ga-nav-link">Dashboard</a>
+            <a href="{{ url_for('growth_associate_prospect_new') }}" class="ga-nav-link text-primary font-weight-bold">+ Submit Prospect</a>
+            <a href="{{ url_for('growth_associate_prospects') }}" class="ga-nav-link">My Referrals</a>
+            <a href="{{ url_for('growth_associate_followups') }}" class="ga-nav-link">Follow-ups</a>
+            <a href="{{ url_for('growth_associate_corporate') }}" class="ga-nav-link">Corporate Opportunities</a>
+            <a href="{{ url_for('growth_associate_proposals') }}" class="ga-nav-link">Proposals</a>
+            <a href="{{ url_for('growth_associate_payments') }}" class="ga-nav-link">Commissions & Payouts</a>
+            <a href="{{ url_for('growth_associate_profile') }}" class="ga-nav-link">Profile & Bank Details</a>
+            <a href="{{ url_for('growth_associate_help') }}" class="ga-nav-link active">Help & FAQs</a>
+        </nav>
+    </aside>
+
+    <main class="ga-content">
+        <div class="card p-4">
+            <h2>Growth Associate Help & FAQs</h2>
+            <p class="text-muted">Everything you need to know about referring prospects and earning commissions.</p>
+
+            <div class="accordion mt-4">
+                <div class="accordion-item card p-3 mb-3">
+                    <h4 class="font-weight-bold text-primary mb-2">1. How do referrals work?</h4>
+                    <p class="mb-0">When you speak with an individual or organization interested in data training (Excel, Power BI, SQL, Python, R, Data Analytics, Data Science, AI), submit their contact info through your portal. Our team will contact them, conduct a strategy session, and enroll them.</p>
+                </div>
+
+                <div class="accordion-item card p-3 mb-3">
+                    <h4 class="font-weight-bold text-primary mb-2">2. What qualifies a referral for commission?</h4>
+                    <p class="mb-0">A referral qualifies for commission after the prospect completes enrollment, their payment is confirmed by TekTutors staff, and the referral status moves to "Converted" and "Commission Approved".</p>
+                </div>
+
+                <div class="accordion-item card p-3 mb-3">
+                    <h4 class="font-weight-bold text-primary mb-2">3. When should I request a mentor follow-up?</h4>
+                    <p class="mb-0">If your prospect has technical questions about course roadmaps, schedule customization, or group training discounts, check "Request Follow-up" so a senior mentor can call them directly.</p>
+                </div>
+
+                <div class="accordion-item card p-3 mb-3">
+                    <h4 class="font-weight-bold text-primary mb-2">4. How do corporate proposal requests work?</h4>
+                    <p class="mb-0">When submitting a corporate opportunity (companies, schools, NGOs, government bodies), check "Request Proposal". Our corporate training team will draft a tailored proposal PDF document, which will appear in your "Proposals" section for download.</p>
+                </div>
+
+                <div class="accordion-item card p-3 mb-3">
+                    <h4 class="font-weight-bold text-primary mb-2">5. How are commission payouts processed?</h4>
+                    <p class="mb-0">Once approved by finance, commission payouts are transferred directly into your verified bank account specified in your Profile settings.</p>
+                </div>
+            </div>
+
+            <div class="alert alert-info p-4 mt-4">
+                <h4 class="mb-2">Need Direct Assistance?</h4>
+                <p class="mb-0">Contact the TekTutors Growth Manager at <a href="mailto:admin@tektutors.com.ng">admin@tektutors.com.ng</a> or via phone/WhatsApp.</p>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

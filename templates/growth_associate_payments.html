@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="ga-layout container my-4">
+    <aside class="ga-sidebar card p-3">
+        <nav class="ga-nav">
+            <a href="{{ url_for('growth_associate_dashboard') }}" class="ga-nav-link">Dashboard</a>
+            <a href="{{ url_for('growth_associate_prospect_new') }}" class="ga-nav-link text-primary font-weight-bold">+ Submit Prospect</a>
+            <a href="{{ url_for('growth_associate_prospects') }}" class="ga-nav-link">My Referrals</a>
+            <a href="{{ url_for('growth_associate_followups') }}" class="ga-nav-link">Follow-ups</a>
+            <a href="{{ url_for('growth_associate_corporate') }}" class="ga-nav-link">Corporate Opportunities</a>
+            <a href="{{ url_for('growth_associate_proposals') }}" class="ga-nav-link">Proposals</a>
+            <a href="{{ url_for('growth_associate_payments') }}" class="ga-nav-link active">Commissions & Payouts</a>
+            <a href="{{ url_for('growth_associate_profile') }}" class="ga-nav-link">Profile & Bank Details</a>
+            <a href="{{ url_for('growth_associate_help') }}" class="ga-nav-link">Help & FAQs</a>
+        </nav>
+    </aside>
+
+    <main class="ga-content">
+        <!-- KPI Overview -->
+        <div class="kpi-grid mb-4">
+            <div class="kpi-card">
+                <span class="kpi-label">Pending Commissions</span>
+                <span class="kpi-value text-warning">₦{{ "{:,.2f}".format(kpis.pending_commissions) }}</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Approved Commissions</span>
+                <span class="kpi-value text-primary">₦{{ "{:,.2f}".format(kpis.approved_commissions) }}</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Total Paid Earnings</span>
+                <span class="kpi-value text-success font-weight-bold">₦{{ "{:,.2f}".format(kpis.paid_commissions) }}</span>
+            </div>
+        </div>
+
+        <!-- Bank Account Status Banner -->
+        <div class="card p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-1">Verified Payout Account</h4>
+                    {% if profile and profile.bank_name and profile.account_number %}
+                    <p class="mb-0 text-success">
+                        <strong>{{ profile.bank_name }}</strong> — {{ profile.account_number }} ({{ profile.account_name }})
+                    </p>
+                    {% else %}
+                    <p class="mb-0 text-danger text-warning font-weight-bold" style="color: #dc2626 !important;">⚠️ No bank payout account configured yet. Add your bank details to receive commission payouts.</p>
+                    {% endif %}
+                </div>
+                <a href="{{ url_for('growth_associate_profile') }}" class="btn btn-secondary btn-sm">Update Bank Details</a>
+            </div>
+        </div>
+
+        <!-- Commissions Ledger Table -->
+        <div class="card p-4">
+            <h2>Commission Ledger</h2>
+            <p class="text-muted">Detailed log of all referral commission calculations and payout statuses.</p>
+
+            {% if commissions %}
+            <div class="table-responsive mt-3">
+                <table class="table-styled">
+                    <thead>
+                        <tr>
+                            <th>Referral ID</th>
+                            <th>Prospect</th>
+                            <th>Opportunity Type</th>
+                            <th>Referral Date</th>
+                            <th>Commission Amount</th>
+                            <th>Approval Status</th>
+                            <th>Payout Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in commissions %}
+                        <tr>
+                            <td><span class="font-mono">{{ c.referral_id }}</span></td>
+                            <td>
+                                <strong>{{ c.prospect_name }}</strong>
+                                {% if c.organization %}<br><small class="text-muted">{{ c.organization }}</small>{% endif %}
+                            </td>
+                            <td>{{ c.opportunity_type }}</td>
+                            <td>{{ c.ref_date[:10] }}</td>
+                            <td>
+                                <strong class="text-success font-mono">₦{{ "{:,.2f}".format(c.commission_amount or 0) }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge {% if c.payment_approval_status == 'Approved' %}badge-success{% else %}badge-warning{% endif %}">
+                                    {{ c.payment_approval_status or 'Unapproved' }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="status-badge status-{{ c.commission_status|lower|replace(' ', '-') }}">
+                                    {{ c.commission_status }}
+                                </span>
+                                {% if c.paid_at %}
+                                <br><small class="text-muted">Paid: {{ c.paid_at[:10] }}</small>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state text-center p-4">
+                <p class="text-muted">No commission records yet. Commissions are created automatically when your submitted prospects are reviewed and converted.</p>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+</div>
+{% endblock %}

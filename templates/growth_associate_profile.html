@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="ga-layout container my-4">
+    <aside class="ga-sidebar card p-3">
+        <nav class="ga-nav">
+            <a href="{{ url_for('growth_associate_dashboard') }}" class="ga-nav-link">Dashboard</a>
+            <a href="{{ url_for('growth_associate_prospect_new') }}" class="ga-nav-link text-primary font-weight-bold">+ Submit Prospect</a>
+            <a href="{{ url_for('growth_associate_prospects') }}" class="ga-nav-link">My Referrals</a>
+            <a href="{{ url_for('growth_associate_followups') }}" class="ga-nav-link">Follow-ups</a>
+            <a href="{{ url_for('growth_associate_corporate') }}" class="ga-nav-link">Corporate Opportunities</a>
+            <a href="{{ url_for('growth_associate_proposals') }}" class="ga-nav-link">Proposals</a>
+            <a href="{{ url_for('growth_associate_payments') }}" class="ga-nav-link">Commissions & Payouts</a>
+            <a href="{{ url_for('growth_associate_profile') }}" class="ga-nav-link active">Profile & Bank Details</a>
+            <a href="{{ url_for('growth_associate_help') }}" class="ga-nav-link">Help & FAQs</a>
+        </nav>
+    </aside>
+
+    <main class="ga-content">
+        <div class="form-card-container">
+            <div class="card p-4">
+                <h2>Growth Associate Profile & Bank Details</h2>
+                <p class="text-muted">Manage your personal information and verified bank payout account.</p>
+
+            <form action="{{ url_for('growth_associate_profile') }}" method="post" class="form-styled mt-3">
+                {{ csrf_field() }}
+
+                <h4 class="form-section-title">1. Personal Information</h4>
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label for="name">Full Name *</label>
+                        <input type="text" id="name" name="name" class="form-control" value="{{ profile.name if profile else '' }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address (Read-only)</label>
+                        <input type="email" id="email" class="form-control bg-light" value="{{ profile.email if profile else '' }}" readonly>
+                    </div>
+                </div>
+
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label for="phone_number">Phone Number</label>
+                        <input type="tel" id="phone_number" name="phone_number" class="form-control" value="{{ profile.phone_number if profile else '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="whatsapp_number">WhatsApp Number</label>
+                        <input type="tel" id="whatsapp_number" name="whatsapp_number" class="form-control" value="{{ profile.whatsapp_number if profile else '' }}">
+                    </div>
+                </div>
+
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label for="location">Location / City</label>
+                        <input type="text" id="location" name="location" class="form-control" value="{{ profile.location if profile else '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="current_occupation">Current Occupation</label>
+                        <input type="text" id="current_occupation" name="current_occupation" class="form-control" value="{{ profile.current_occupation if profile else '' }}">
+                    </div>
+                </div>
+
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label for="company_name">Company / Organization</label>
+                        <input type="text" id="company_name" name="company_name" class="form-control" value="{{ profile.company_name if profile else '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="linkedin_url">LinkedIn URL</label>
+                        <input type="url" id="linkedin_url" name="linkedin_url" class="form-control" value="{{ profile.linkedin_url if profile else '' }}">
+                    </div>
+                </div>
+
+                <h4 class="form-section-title mt-4">2. Bank Payout Account (Protected)</h4>
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label for="bank_name">Bank Name</label>
+                        <input type="text" id="bank_name" name="bank_name" class="form-control" value="{{ profile.bank_name if profile else '' }}" placeholder="e.g. Zenith Bank / Access Bank / GTBank">
+                    </div>
+                    <div class="form-group">
+                        <label for="account_number">Account Number (10 Digits)</label>
+                        <input type="text" id="account_number" name="account_number" class="form-control" value="{{ profile.account_number if profile else '' }}" placeholder="0123456789">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="account_name">Account Name (Must match your registered name)</label>
+                    <input type="text" id="account_name" name="account_name" class="form-control" value="{{ profile.account_name if profile else '' }}" placeholder="e.g. Samuel Adebayo">
+                </div>
+
+                <div class="form-group">
+                    <label for="payout_notes">Payout Notes / Instructions</label>
+                    <input type="text" id="payout_notes" name="payout_notes" class="form-control" value="{{ profile.payout_notes if profile else '' }}" placeholder="Additional notes for finance team">
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg mt-3">Save Profile & Bank Information</button>
+            </form>
+        </div>
+    </div>
+</main>
+</div>
+{% endblock %}

@@ -280,24 +280,39 @@
                             {% endif %}
 
                             {% if session.recording_status == 'available' %}
-                            <div class="lms-recording-section">
-                                <a href="{{ session.recording_play_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary recording-action">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
-                                    Watch
-                                </a>
-                                <a href="{{ session.recording_download_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-tertiary recording-action">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                    Download
-                                </a>
+                            <div class="lms-recording-section" style="display: flex; flex-direction: column; gap: 5px; width: 100%;">
+                                <div style="display: flex; gap: 5px; width: 100%;">
+                                    <a href="{{ session.recording_play_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary recording-action" style="flex: 1; text-align: center;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                                        Watch
+                                    </a>
+                                    <a href="{{ session.recording_download_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-tertiary recording-action" style="flex: 1; text-align: center;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                        Download
+                                    </a>
+                                </div>
+                                {% if current_user.role in ["mentor", "admin"] %}
+                                <form class="inline-form full-width" action="{{ url_for('manual_delete_recording', slug=classroom.slug, session_id=session.id) }}" method="post" data-confirm="Are you sure you want to remove this recording?">
+                                    {{ csrf_field() }}
+                                    <button type="submit" class="btn btn-danger full-width" style="padding: 4px 8px; font-size: 11px;">Remove recording</button>
+                                </form>
+                                {% endif %}
                             </div>
                             {% elif session.is_completed %}
-                            <div class="lms-recording-pending">
+                            <div class="lms-recording-pending" style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
                                 <span class="recording-processing-badge">
                                     <svg class="spinner icon-inline" width="16" height="16" viewBox="0 0 50 50">
                                         <circle class="path spinner-path" cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5"></circle>
                                     </svg>
                                     Recording processing...
                                 </span>
+                                {% if current_user.role in ["mentor", "admin"] %}
+                                <form class="inline-form full-width" action="{{ url_for('manual_add_recording', slug=classroom.slug, session_id=session.id) }}" method="post" style="display: flex; flex-direction: column; gap: 5px;">
+                                    {{ csrf_field() }}
+                                    <input type="url" name="recording_url" placeholder="Paste recording URL here..." required style="padding: 6px 10px; font-size: 12px; border: 1px solid #ccc; border-radius: 4px; width: 100%;">
+                                    <button type="submit" class="btn btn-secondary full-width" style="padding: 5px 10px; font-size: 11px;">Add recording manually</button>
+                                </form>
+                                {% endif %}
                             </div>
                             {% endif %}
                         </div>
@@ -521,7 +536,7 @@
                         <h2>Final project workspace</h2>
                     </div>
                     {% if current_user.role == "student" %}
-                    <span class="lms-status-pill">{{ "Active" if classroom.project_unlocked else "Activates at 95% progress" }}</span>
+                    <span class="lms-status-pill">{{ "Active" if classroom.project_unlocked else "Activates at " ~ PROJECT_UNLOCK_PROGRESS ~ "% progress" }}</span>
                     {% endif %}
                 </div>
 
@@ -533,7 +548,7 @@
                             {% if classroom.project_unlocked %}
                             Your project is active.
                             {% else %}
-                            Project becomes active at 95% class progress.
+                            Project becomes active at {{ PROJECT_UNLOCK_PROGRESS }}% class progress.
                             {% endif %}
                         </h3>
                         <p>
@@ -580,6 +595,24 @@
                             {% if suggestion.mentor_note %}
                             <p><strong>Mentor note:</strong> {{ suggestion.mentor_note|linkify("Open mentor reference") }}</p>
                             {% endif %}
+                            {% if current_user.role in ["mentor", "admin"] %}
+                            <div style="margin-top: 15px;">
+                                <details class="portal-nested-disclosure">
+                                    <summary>Review Suggestion</summary>
+                                    <form class="dashboard-form" action="{{ url_for('review_project_suggestion', slug=classroom.slug, suggestion_id=suggestion.id) }}" method="post" style="margin-top: 10px;">
+                                        {{ csrf_field() }}
+                                        <label for="status-suggestion-{{ suggestion.id }}">Decision</label>
+                                        <select id="status-suggestion-{{ suggestion.id }}" name="status" required>
+                                            <option value="approved" {% if suggestion.status == "approved" %}selected{% endif %}>Approve</option>
+                                            <option value="declined" {% if suggestion.status == "declined" %}selected{% endif %}>Decline</option>
+                                        </select>
+                                        <label for="note-suggestion-{{ suggestion.id }}">Mentor note / feedback</label>
+                                        <textarea id="note-suggestion-{{ suggestion.id }}" name="mentor_note" rows="3" placeholder="Add recommendations or reasons for approval/declination">{{ suggestion.mentor_note or '' }}</textarea>
+                                        <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Save review</button>
+                                    </form>
+                                </details>
+                            </div>
+                            {% endif %}
                         </article>
                         {% else %}
                         <article class="lms-assignment-card">
@@ -598,7 +631,7 @@
                             <p class="lms-stream-meta">Due {{ assignment.due_label }}</p>
                             {% if current_user.role == "student" %}
                             {% if not classroom.project_unlocked %}
-                            <p class="lms-stream-meta">Submission opens when your class progress reaches 95%.</p>
+                             <p class="lms-stream-meta">Submission opens when your class progress reaches {{ PROJECT_UNLOCK_PROGRESS }}%.</p>
                             <button class="btn btn-secondary" type="button" disabled>Project locked</button>
                             {% else %}
                             <p class="lms-stream-meta">
@@ -664,56 +697,78 @@
                 <div class="lms-panel-heading">
                     <div>
                         <p class="kicker">Certificate</p>
-                        <h2>Completion certificate</h2>
-                    </div>
+                        <h2>Official course completion certificate</h2>
+                    </div>                </div>
+                <div class="certificate-dashboard-grid">
                     {% if current_user.role == "student" %}
-                    <span class="lms-status-pill">{{ "Ready" if classroom.certificate_unlocked else "Locked" }}</span>
-                    {% endif %}
-                </div>
-                <div class="dashboard-grid certificate-dashboard-grid">
-                    <article class="dashboard-card certificate-specimen-card">
-                        <div class="certificate-preview" aria-label="Certificate preview">
-                            <span class="certificate-watermark">{{ "Verified" if classroom.certificate_unlocked else "Sample" }}</span>
-                            <div class="certificate-preview-top">
-                                <img src="{{ url_for('static', filename='images/tektutors-logo.svg') }}" alt="Tektutors">
-                                <span>ID: {{ "Available" if classroom.certificate_unlocked else "Pending" }}</span>
-                            </div>
-                            <p class="certificate-preview-kicker">Certificate of Completion</p>
-                            <p class="certificate-preview-title">Professional Credential</p>
-                            <h3>{{ current_user.name }}</h3>
-                            <p>has successfully completed the required live sessions, coursework, and project assessment for</p>
-                            <strong>{{ classroom.title }}</strong>
-                            <div class="certificate-preview-meta">
-                                <span>{{ "Project passed" if classroom.project_passed else "Project pending" }}</span>
-                                <span>{{ "Attendance complete" if classroom.progress >= 100 else classroom.progress ~ "% progress" }}</span>
-                                <span>Tektutors Learning Hub</span>
-                                <span>{{ classroom.course_duration }}</span>
-                            </div>
-                            <div class="certificate-preview-footer">
-                                <span class="certificate-preview-signature">Tektutors</span>
-                                <span class="certificate-preview-stamp">Verified</span>
-                                <span class="certificate-preview-qr" aria-hidden="true"></span>
-                            </div>
-                        </div>
+                    <article class="dashboard-card">
+                        <p class="kicker">Preview</p>
+                        <iframe src="{{ url_for('view_student_certificate', slug=classroom.slug) }}" class="certificate-preview-iframe" style="width:100%; height:400px; border:none;"></iframe>
                     </article>
                     <article class="dashboard-card">
-                        <p class="kicker">Download</p>
-                        {% if current_user.role == "student" %}
-                            <h3>Unlocks after 100% progress and a passed project</h3>
-                            {% if classroom.certificate_unlocked %}
-                            <p>Your certificate is ready for this classroom.</p>
+                        <p class="kicker">Download access</p>
+                        <h3>{% if classroom.certificate_unlocked %}Your certificate is ready{% else %}Complete every requirement{% endif %}</h3>
+                        <ul class="certificate-requirements">
+                            <li class="{{ 'complete' if classroom.attendance_complete else 'pending' }}">100% class progress</li>
+                            <li class="{{ 'complete' if classroom.all_coursework_submitted else 'pending' }}">All assignments and project submitted</li>
+                            <li class="{{ 'complete' if classroom.project_passed else 'pending' }}">Project passed</li>
+                            <li class="{{ 'complete' if classroom.admin_approved else 'pending' }}">Admin approval granted</li>
+                        </ul>
+                        <p class="lms-stream-meta">Submitted coursework: {{ classroom.coursework_submitted }}/{{ classroom.coursework_total }} | Projects: {{ classroom.project_submitted }}/{{ classroom.project_total }}</p>
+                        {% if classroom.certificate_unlocked %}
+                            <p>Your official Tektutors certificate is approved and ready to download.</p>
                             <a class="btn btn-primary" href="{{ url_for('download_student_certificate', slug=classroom.slug) }}">Download certificate</a>
-                            {% else %}
-                            <p>Keep attending class sessions and submit your project. The download button becomes available once your progress reaches 100% and your project is passed.</p>
-                            <button class="btn btn-secondary" type="button" disabled>Certificate locked</button>
-                            {% endif %}
+                        {% elif classroom.admin_approved == false and classroom.attendance_complete and classroom.all_coursework_submitted and classroom.project_passed %}
+                            <p>You have completed the learning requirements. The download button will appear after admin approval.</p>
+                            <button class="btn btn-secondary" type="button" disabled>Awaiting admin approval</button>
                         {% else %}
-                            <h3>Learner certificate requirements</h3>
-                            <p>Learners can download their certificate from this classroom after reaching 100% progress and passing the final project.</p>
+                            <p>Keep attending class sessions and submit every assignment and project. Admin approval is required before download access opens.</p>
+                            <button class="btn btn-secondary" type="button" disabled>Certificate locked</button>
                         {% endif %}
                     </article>
+                    {% else %}
+                    <article class="dashboard-card full-width">
+                        <p class="kicker">Management</p>
+                        <h3>Learner certificate approvals</h3>
+                        <p>Learners can download their certificates only after 100% attendance progress, all coursework & project submissions, a passed project, and admin approval.</p>
+                    </article>
+                    {% endif %}
+                </div>      <div class="certificate-approval-list">
+                                {% for learner in classroom.certificate_requests %}
+                                <article class="certificate-approval-item">
+                                    <div>
+                                        <strong>{{ learner.name }}</strong>
+                                        <p>{{ learner.attendance_progress }}% progress | {{ learner.coursework_submitted }}/{{ learner.coursework_total }} submitted | Project {{ "passed" if learner.project_passed else "pending" }}</p>
+                                        <p class="lms-stream-meta">{{ learner.approved_label }}</p>
+                                    </div>
+                                    {% if current_user.role == "admin" %}
+                                        {% if learner.admin_approved %}
+                                        <form class="inline-form" action="{{ url_for('admin_update_certificate_approval', slug=classroom.slug, student_id=learner.id) }}" method="post">
+                                            {{ csrf_field() }}
+                                            <input type="hidden" name="action" value="revoke">
+                                            <button type="submit" class="btn btn-secondary btn-sm">Revoke access</button>
+                                        </form>
+                                        {% elif learner.eligible_for_approval %}
+                                        <form class="inline-form" action="{{ url_for('admin_update_certificate_approval', slug=classroom.slug, student_id=learner.id) }}" method="post">
+                                            {{ csrf_field() }}
+                                            <input type="hidden" name="action" value="approve">
+                                            <button type="submit" class="btn btn-primary btn-sm">Approve download</button>
+                                        </form>
+                                        {% else %}
+                                        <button class="btn btn-secondary btn-sm" type="button" disabled>Not ready</button>
+                                        {% endif %}
+                                    {% endif %}
+                                </article>
+                                {% else %}
+                                <p>No learners are enrolled in this classroom yet.</p>
+                                {% endfor %}
+                            </div>
+
+                    </article>
+
                 </div>
             </section>
+
             <section class="lms-panel reveal portal-tab-panel" id="scores">
                 <div class="lms-panel-heading">
                     <div>

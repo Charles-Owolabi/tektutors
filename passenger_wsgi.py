@@ -23,6 +23,7 @@ try:
 except Exception:
     app_dir = Path(__file__).resolve().parent
     env_file = app_dir / ".env"
+    files_in_dir = [f.name for f in app_dir.iterdir() if f.is_file()]
     project_env = dotenv_values(env_file) if env_file.exists() else {}
     diagnostics = [
         "Passenger startup failed.",
@@ -30,6 +31,8 @@ except Exception:
         f"runtime_DATABASE_URL={describe_database_url(os.environ.get('DATABASE_URL'))}",
         f"runtime_POSTGRES_URL={describe_database_url(os.environ.get('POSTGRES_URL'))}",
         f"runtime_POSTGRESQL_URL={describe_database_url(os.environ.get('POSTGRESQL_URL'))}",
+        f"env_file_exists={env_file.exists()}",
+        f"files_in_directory={files_in_dir}",
         "",
         traceback.format_exc(),
     ]

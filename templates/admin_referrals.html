@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <p class="kicker">TekTutors CRM Administration</p>
+            <h2>Referral CRM Pipeline Management</h2>
+        </div>
+        <div>
+            <a href="{{ url_for('admin_export_reports', type='referrals') }}" class="btn btn-secondary">📥 Export Referrals CSV</a>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-light">Back to LMS Admin</a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card p-3 mb-4">
+        <form method="get" action="{{ url_for('admin_referrals') }}" class="grid grid-3 gap-2">
+            <input type="text" name="q" value="{{ search_q }}" class="form-control" placeholder="Search referral ID, prospect name, or associate...">
+            <select name="status" class="form-control">
+                <option value="">-- All Pipeline Statuses --</option>
+                <option value="Submitted" {% if status_filter == 'Submitted' %}selected{% endif %}>Submitted</option>
+                <option value="Under Review" {% if status_filter == 'Under Review' %}selected{% endif %}>Under Review</option>
+                <option value="Accepted" {% if status_filter == 'Accepted' %}selected{% endif %}>Accepted</option>
+                <option value="Contacted" {% if status_filter == 'Contacted' %}selected{% endif %}>Contacted</option>
+                <option value="Follow-up Requested" {% if status_filter == 'Follow-up Requested' %}selected{% endif %}>Follow-up Requested</option>
+                <option value="Qualified" {% if status_filter == 'Qualified' %}selected{% endif %}>Qualified</option>
+                <option value="Proposal Sent" {% if status_filter == 'Proposal Sent' %}selected{% endif %}>Proposal Sent</option>
+                <option value="Payment Pending" {% if status_filter == 'Payment Pending' %}selected{% endif %}>Payment Pending</option>
+                <option value="Converted" {% if status_filter == 'Converted' %}selected{% endif %}>Converted</option>
+                <option value="Commission Approved" {% if status_filter == 'Commission Approved' %}selected{% endif %}>Commission Approved</option>
+                <option value="Commission Paid" {% if status_filter == 'Commission Paid' %}selected{% endif %}>Commission Paid</option>
+                <option value="Duplicate" {% if status_filter == 'Duplicate' %}selected{% endif %}>Duplicate</option>
+            </select>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-secondary flex-grow-1">Filter Pipeline</button>
+                <a href="{{ url_for('admin_referrals') }}" class="btn btn-light">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="card p-4">
+        {% if prospects %}
+        <div class="table-responsive">
+            <table class="table-styled">
+                <thead>
+                    <tr>
+                        <th>Referral ID</th>
+                        <th>Prospect Details</th>
+                        <th>Associate</th>
+                        <th>Opportunity</th>
+                        <th>Status</th>
+                        <th>Commission</th>
+                        <th>Update Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in prospects %}
+                    <tr>
+                        <td>
+                            <strong class="font-mono">{{ p.referral_id }}</strong>
+                            {% if p.is_duplicate %}
+                            <br><span class="badge badge-danger badge-warning" style="background-color: #fee2e2 !important; color: #dc2626 !important; border: 1px solid #fca5a5 !important; font-weight: 700;">⚠️ Duplicate Flag</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong>{{ p.full_name }}</strong><br>
+                            <small>{{ p.email }} | {{ p.phone_number }}</small>
+                            {% if p.organization %}<br><small class="text-muted">{{ p.organization }}</small>{% endif %}
+                        </td>
+                        <td>
+                            <strong>{{ p.associate_name }}</strong><br>
+                            <small class="text-muted">{{ p.associate_email }}</small>
+                        </td>
+                        <td>
+                            {{ p.opportunity_type }}<br>
+                            <small class="text-primary">{{ p.training_interests }}</small>
+                        </td>
+                        <td>
+                            <span class="status-badge status-{{ p.status|lower|replace(' ', '-') }}">{{ p.status }}</span>
+                        </td>
+                        <td>
+                            ₦{{ "{:,.2f}".format(p.commission_amount or 0) }}
+                        </td>
+                        <td>
+                            <form action="{{ url_for('admin_referral_status', prospect_id=p.id) }}" method="post" class="d-flex flex-column gap-1">
+                                {{ csrf_field() }}
+                                <select name="status" class="form-control form-control-sm" style="font-size: 0.8rem;">
+                                    <option value="Submitted" {% if p.status == 'Submitted' %}selected{% endif %}>Submitted</option>
+                                    <option value="Accepted" {% if p.status == 'Accepted' %}selected{% endif %}>Accepted</option>
+                                    <option value="Contacted" {% if p.status == 'Contacted' %}selected{% endif %}>Contacted</option>
+                                    <option value="Qualified" {% if p.status == 'Qualified' %}selected{% endif %}>Qualified</option>
+                                    <option value="Proposal Sent" {% if p.status == 'Proposal Sent' %}selected{% endif %}>Proposal Sent</option>
+                                    <option value="Payment Pending" {% if p.status == 'Payment Pending' %}selected{% endif %}>Payment Pending</option>
+                                    <option value="Converted" {% if p.status == 'Converted' %}selected{% endif %}>Converted (Payment Confirmed)</option>
+                                    <option value="Commission Approved" {% if p.status == 'Commission Approved' %}selected{% endif %}>Commission Approved</option>
+                                    <option value="Commission Paid" {% if p.status == 'Commission Paid' %}selected{% endif %}>Commission Paid</option>
+                                    <option value="Not Interested" {% if p.status == 'Not Interested' %}selected{% endif %}>Not Interested</option>
+                                    <option value="Duplicate" {% if p.status == 'Duplicate' %}selected{% endif %}>Duplicate</option>
+                                </select>
+                                <input type="number" name="commission_amount" value="{{ p.commission_amount or 0 }}" class="form-control form-control-sm" placeholder="Commission ₦" step="1000">
+                                <button type="submit" class="btn btn-sm btn-primary py-0">Save</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center p-4">No referrals found.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

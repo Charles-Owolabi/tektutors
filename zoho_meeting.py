@@ -207,6 +207,18 @@ def fetch_meeting_recording(meeting_key):
 
     try:
         response = requests.get(url, headers=headers, timeout=10)
+        # If token is invalid or expired, Zoho returns 401. Refresh token and retry once.
+        if response.status_code == 401:
+            # Remove cached token to force refresh
+            try:
+                os.remove(TOKEN_FILE)
+            except Exception:
+                pass
+            new_token = get_access_token()
+            if not new_token:
+                return None, None
+            headers["Authorization"] = f"Zoho-oauthtoken {new_token}"
+            response = requests.get(url, headers=headers, timeout=10)
         if response.status_code == 400 or response.status_code == 404:
             # Typically means recording is not generated yet or no recording exists
             return None, None

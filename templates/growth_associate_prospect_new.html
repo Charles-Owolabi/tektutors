@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="ga-layout container my-4">
+    <aside class="ga-sidebar card p-3">
+        <nav class="ga-nav">
+            <a href="{{ url_for('growth_associate_dashboard') }}" class="ga-nav-link">Dashboard</a>
+            <a href="{{ url_for('growth_associate_prospect_new') }}" class="ga-nav-link active">+ Submit Prospect</a>
+            <a href="{{ url_for('growth_associate_prospects') }}" class="ga-nav-link">My Referrals</a>
+            <a href="{{ url_for('growth_associate_followups') }}" class="ga-nav-link">Follow-ups</a>
+            <a href="{{ url_for('growth_associate_corporate') }}" class="ga-nav-link">Corporate Opportunities</a>
+            <a href="{{ url_for('growth_associate_proposals') }}" class="ga-nav-link">Proposals</a>
+            <a href="{{ url_for('growth_associate_payments') }}" class="ga-nav-link">Commissions & Payouts</a>
+            <a href="{{ url_for('growth_associate_profile') }}" class="ga-nav-link">Profile & Bank Details</a>
+            <a href="{{ url_for('growth_associate_help') }}" class="ga-nav-link">Help & FAQs</a>
+        </nav>
+    </aside>
+
+    <main class="ga-content">
+        <div class="form-card-container">
+            <div class="card p-4">
+                <h2 class="mb-1">Submit a New Prospect / Referral</h2>
+                <p class="text-muted mb-4">Introduce an individual or institutional prospect to TekTutors.</p>
+
+            {% if duplicate_warning %}
+            <div class="alert alert-danger alert-warning border-danger p-4 mb-4" style="background-color: #fef2f2; border: 2px solid #dc2626; border-radius: 16px; color: #991b1b;">
+                <h4 class="text-danger text-warning font-weight-bold mb-2" style="color: #dc2626 !important;">⚠️ Duplicate Prospect Warning</h4>
+                <p class="mb-2" style="color: #991b1b; font-size: 1.05rem;"><strong>{{ duplicate_warning.message }}</strong></p>
+                <p class="mb-2" style="color: #991b1b;"><strong>Match Reason:</strong> <span class="badge badge-danger" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; font-size: 0.9rem;">{{ duplicate_warning.match_type }}</span></p>
+                <p class="mb-0 text-muted" style="color: #7f1d1d !important;">TekTutors administrators review all duplicate lead flags to confirm referral ownership.</p>
+            </div>
+            {% endif %}
+
+            <form action="{{ url_for('growth_associate_prospect_new') }}" method="post" class="form-styled">
+                {{ csrf_field() }}
+
+                {% if duplicate_warning %}
+                <input type="hidden" name="override_duplicate" value="1">
+                {% endif %}
+
+                <h4 class="form-section-title">1. Prospect Contact Details</h4>
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label for="full_name">Prospect Full Name *</label>
+                        <input type="text" id="full_name" name="full_name" class="form-control" value="{{ form_data.full_name if form_data else '' }}" required placeholder="e.g. Dr. Emmanuel Okafor">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address *</label>
+                        <input type="email" id="email" name="email" class="form-control" value="{{ form_data.email if form_data else '' }}" required placeholder="emmanuel@example.com">
+                    </div>
+                </div>
+
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label for="phone_number">Phone Number *</label>
+                        <input type="tel" id="phone_number" name="phone_number" class="form-control" value="{{ form_data.phone_number if form_data else '' }}" required placeholder="+234 802 345 6789">
+                    </div>
+                    <div class="form-group">
+                        <label for="whatsapp_number">WhatsApp Number</label>
+                        <input type="tel" id="whatsapp_number" name="whatsapp_number" class="form-control" value="{{ form_data.whatsapp_number if form_data else '' }}" placeholder="+234 802 345 6789">
+                    </div>
+                </div>
+
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label for="organization">Organization / Institution / Company</label>
+                        <input type="text" id="organization" name="organization" class="form-control" value="{{ form_data.organization if form_data else '' }}" placeholder="Company or school name (if applicable)">
+                    </div>
+                    <div class="form-group">
+                        <label for="job_title">Job Title / Role</label>
+                        <input type="text" id="job_title" name="job_title" class="form-control" value="{{ form_data.job_title if form_data else '' }}" placeholder="Head of HR, Analyst, Student, Director">
+                    </div>
+                </div>
+
+                <div class="grid grid-3">
+                    <div class="form-group">
+                        <label for="location">City / Location</label>
+                        <input type="text" id="location" name="location" class="form-control" value="{{ form_data.location if form_data else '' }}" placeholder="Lagos, Abuja, Port Harcourt">
+                    </div>
+                    <div class="form-group">
+                        <label for="country">Country</label>
+                        <input type="text" id="country" name="country" class="form-control" value="{{ form_data.country if form_data else 'Nigeria' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="preferred_contact_method">Preferred Contact Method</label>
+                        <select id="preferred_contact_method" name="preferred_contact_method" class="form-control">
+                            <option value="Phone Call">Phone Call</option>
+                            <option value="WhatsApp">WhatsApp</option>
+                            <option value="Email">Email</option>
+                            <option value="Any">Any</option>
+                        </select>
+                    </div>
+                </div>
+
+                <h4 class="form-section-title mt-4">2. Opportunity Details & Training Interest</h4>
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label for="opportunity_type">Opportunity Type *</label>
+                        <select id="opportunity_type" name="opportunity_type" class="form-control" required>
+                            <option value="Individual Training">Individual Training</option>
+                            <option value="One-on-One Training">One-on-One Training</option>
+                            <option value="Group Training">Group Training</option>
+                            <option value="Corporate Training">Corporate Training</option>
+                            <option value="School Training">School Training</option>
+                            <option value="Church Training">Church Training</option>
+                            <option value="Business Training">Business Training</option>
+                            <option value="Institutional Training">Institutional Training</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lead_temperature">Lead Temperature</label>
+                        <select id="lead_temperature" name="lead_temperature" class="form-control">
+                            <option value="Hot">🔥 Hot (Ready to start / urgent need)</option>
+                            <option value="Warm" selected>⚡ Warm (Expressed clear interest)</option>
+                            <option value="Cold">❄️ Cold (Exploratory / general lead)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Training Subjects of Interest <span class="form-help-text">(Select all that apply)</span></label>
+                    <div class="checkbox-grid">
+                        <label class="checkbox-card"><input type="checkbox" name="training_interests" value="Excel"> <span>Excel</span></label>
+                        <label class="checkbox-card"><input type="checkbox" name="training_interests" value="Power BI"> <span>Power BI</span></label>
+                        <label class="checkbox-card"><input type="checkbox" name="training_interests" value="SQL"> <span>SQL</span></label>
+                        <label class="checkbox-card"><input type="checkbox" name="training_interests" value="Python"> <span>Python</span></label>
+                        <label class="checkbox-card"><input type="checkbox" name="training_interests" value="R"> <span>R</span></label>
+                        <label class="checkbox-card"><input type="checkbox" name="training_interests" value="Data Analytics"> <span>Data Analytics</span></label>
+                        <label class="checkbox-card"><input type="checkbox" name="training_interests" value="Business Intelligence"> <span>Business Intelligence</span></label>
+                        <label class="checkbox-card"><input type="checkbox" name="training_interests" value="Data Science"> <span>Data Science</span></label>
+                        <label class="checkbox-card"><input type="checkbox" name="training_interests" value="Artificial Intelligence"> <span>Artificial Intelligence</span></label>
+                        <label class="checkbox-card"><input type="checkbox" name="training_interests" value="Machine Learning"> <span>Machine Learning</span></label>
+                        <label class="checkbox-card"><input type="checkbox" name="training_interests" value="Automation"> <span>Automation</span></label>
+                    </div>
+                    <div class="mt-2">
+                        <input type="text" name="other_training_interest" class="form-control" placeholder="Other specific topic or 'Not sure / Needs consultation'">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="prospect_details">Prospect Context & Specific Requirements</label>
+                    <textarea id="prospect_details" name="prospect_details" class="form-control" rows="3" placeholder="Tell us anything useful about this prospect, their current skills, goals, schedule preferences, or organization size."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="estimated_value">Estimated Opportunity Value (₦ Optional)</label>
+                    <input type="number" id="estimated_value" name="estimated_value" class="form-control" placeholder="e.g. 150000" step="1000">
+                </div>
+
+                <h4 class="form-section-title mt-4">3. Mentor Follow-up Request</h4>
+                <div class="form-group card p-3 bg-light">
+                    <label class="checkbox-label mb-2">
+                        <input type="checkbox" name="request_followup" value="1" id="toggle_followup">
+                        <span class="font-weight-bold">I would like a TekTutors senior mentor/business representative to follow up with this prospect.</span>
+                    </label>
+
+                    <div id="followup_fields" class="mt-3">
+                        <div class="grid grid-2">
+                            <div class="form-group mb-2">
+                                <label for="preferred_followup_method">Preferred Follow-up Method</label>
+                                <select id="preferred_followup_method" name="preferred_followup_method" class="form-control">
+                                    <option value="Phone Call">Phone Call</option>
+                                    <option value="WhatsApp">WhatsApp</option>
+                                    <option value="Email">Email</option>
+                                    <option value="Any">Any Method</option>
+                                </select>
+                            </div>
+                            <div class="form-group mb-2">
+                                <label for="preferred_followup_time">Preferred Follow-up Time</label>
+                                <select id="preferred_followup_time" name="preferred_followup_time" class="form-control">
+                                    <option value="Morning (9am - 12pm)">Morning (9am - 12pm)</option>
+                                    <option value="Afternoon (12pm - 4pm)">Afternoon (12pm - 4pm)</option>
+                                    <option value="Evening (4pm - 8pm)">Evening (4pm - 8pm)</option>
+                                    <option value="Any time" selected>Any convenient time</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label for="followup_instructions">Additional Follow-up Instructions</label>
+                            <textarea id="followup_instructions" name="followup_instructions" class="form-control" rows="2" placeholder="e.g. Please emphasize night session availability."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    {% if duplicate_warning %}
+                    <button type="submit" class="btn btn-danger btn-warning btn-lg" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important; color: #ffffff !important; border: 1px solid #b91c1c !important; font-weight: 700;">Confirm & Submit Duplicate Prospect</button>
+                    {% else %}
+                    <button type="submit" class="btn btn-primary btn-lg">+ Submit Prospect Referral</button>
+                    {% endif %}
+                    <a href="{{ url_for('growth_associate_dashboard') }}" class="btn btn-secondary btn-lg">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+</div>
+{% endblock %}

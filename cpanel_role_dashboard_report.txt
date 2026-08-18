@@ -1,0 +1,33 @@
+USER_COUNT=16
+TEST_USER id=1 email=student@tektutors.com.ng role=student approved=1 suspended=0 must_change=0
+RESULT email=student@tektutors.com.ng status=200 path=/dashboard/student
+TEST_USER id=2 email=amina@tektutors.com.ng role=student approved=1 suspended=0 must_change=0
+RESULT email=amina@tektutors.com.ng status=200 path=/dashboard/student
+TEST_USER id=3 email=victor@tektutors.com.ng role=student approved=1 suspended=0 must_change=0
+RESULT email=victor@tektutors.com.ng status=200 path=/dashboard/student
+TEST_USER id=4 email=grace@tektutors.com.ng role=student approved=1 suspended=0 must_change=0
+RESULT email=grace@tektutors.com.ng status=200 path=/dashboard/student
+TEST_USER id=5 email=ada.nwosu@tektutors.com.ng role=mentor approved=1 suspended=0 must_change=1
+RESULT email=ada.nwosu@tektutors.com.ng status=200 path=/dashboard/mentor
+TEST_USER id=6 email=michael.bassey@tektutors.com.ng role=mentor approved=1 suspended=0 must_change=1
+RESULT email=michael.bassey@tektutors.com.ng status=200 path=/dashboard/mentor
+TEST_USER id=7 email=chidinma.ude@tektutors.com.ng role=mentor approved=1 suspended=0 must_change=1
+RESULT email=chidinma.ude@tektutors.com.ng status=200 path=/dashboard/mentor
+TEST_USER id=8 email=testlearner@example.com role=student approved=0 suspended=0 must_change=0
+RESULT email=testlearner@example.com status=200 path=/auth/login
+TEST_USER id=9 email=ctowolabi@gmail.com role=mentor approved=1 suspended=0 must_change=1
+RESULT email=ctowolabi@gmail.com status=200 path=/dashboard/mentor
+TEST_USER id=10 email=admin@tektutors.com.ng role=admin approved=1 suspended=0 must_change=0
+RESULT email=admin@tektutors.com.ng status=200 path=/dashboard/admin
+TEST_USER id=11 email=lolatunde18@gmail.com role=mentor approved=1 suspended=0 must_change=0
+RESULT email=lolatunde18@gmail.com status=200 path=/dashboard/mentor
+TEST_USER id=13 email=ojebontop4real@gmail.com role=student approved=1 suspended=0 must_change=1
+RESULT email=ojebontop4real@gmail.com status=200 path=/dashboard/student
+TEST_USER id=14 email=kehindefehintola@yahoo.co.uk role=student approved=1 suspended=0 must_change=0
+RESULT email=kehindefehintola@yahoo.co.uk status=200 path=/dashboard/student
+TEST_USER id=15 email=omojadesolabalogun@gmail.com role=student approved=1 suspended=0 must_change=1
+RESULT email=omojadesolabalogun@gmail.com status=200 path=/dashboard/student
+TEST_USER id=16 email=immaculeta99@gmail.com role=student approved=1 suspended=0 must_change=0
+RESULT email=immaculeta99@gmail.com status=200 path=/dashboard/student
+TEST_USER id=17 email=anielozie@yahoo.com role=student approved=1 suspended=0 must_change=0
+RESULT email=anielozie@yahoo.com status=200 path=/dashboard/student
