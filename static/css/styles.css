@@ -625,6 +625,72 @@ a:hover {
     text-decoration: none;
 }
 
+.quick-access .quick-register-link {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.62rem;
+    min-width: min(100%, 330px);
+    min-height: 58px;
+    border-radius: 14px;
+    padding: 0.62rem 0.76rem;
+    color: #ffffff;
+    border-color: rgba(15, 118, 110, 0.32);
+    background: linear-gradient(135deg, var(--primary), var(--teal), var(--accent));
+    box-shadow: 0 14px 30px rgba(19, 33, 82, 0.2);
+    text-align: left;
+}
+
+.quick-access .quick-register-link:hover {
+    color: #101827;
+    border-color: rgba(215, 169, 75, 0.55);
+    background: linear-gradient(135deg, #ffd28a, #ffffff);
+}
+
+.quick-register-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    color: #132152;
+    background: linear-gradient(135deg, #ffd28a, #ffffff);
+}
+
+.quick-register-copy {
+    min-width: 0;
+    display: grid;
+    gap: 0.08rem;
+}
+
+.quick-register-copy strong,
+.quick-register-copy small {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+.quick-register-copy strong {
+    font-size: 0.82rem;
+    line-height: 1.18;
+}
+
+.quick-register-copy small {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.quick-register-arrow {
+    flex: 0 0 auto;
+    transition: transform 0.2s ease;
+}
+
+.quick-access .quick-register-link:hover .quick-register-arrow {
+    transform: translateX(3px);
+}
+
 .hero-visual {
     position: relative;
 }
@@ -1362,6 +1428,55 @@ a:hover {
     box-shadow: 0 0 0 6px rgba(235, 103, 17, 0.16);
 }
 
+.policy-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(1.1rem, 2.6vw, 1.6rem);
+    align-items: start;
+}
+
+.policy-content,
+.policy-contact {
+    background: linear-gradient(165deg, var(--surface), var(--surface-soft));
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-soft);
+    padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.policy-content {
+    max-width: 920px;
+}
+
+.policy-content h2 {
+    margin-top: 2rem;
+}
+
+.policy-content h2:first-child {
+    margin-top: 0;
+}
+
+.policy-content h3 {
+    margin-top: 1.35rem;
+}
+
+.policy-content ul,
+.policy-content ol,
+.policy-contact ul {
+    margin: 0.75rem 0 1.1rem;
+    padding-left: 1.35rem;
+}
+
+.policy-content li,
+.policy-contact li {
+    margin: 0.38rem 0;
+    color: var(--ink-soft);
+}
+
+.policy-contact {
+    width: 100%;
+}
+
 .tool-chip {
     border-radius: 14px;
     border: 1px solid var(--line);
@@ -1408,6 +1523,157 @@ a:hover {
 .page-hero h1 {
     font-size: clamp(1.95rem, 8vw, 3.1rem);
     max-width: 16ch;
+}
+
+.registration-hero {
+    overflow: hidden;
+    padding: clamp(3rem, 6vw, 5rem) 0 clamp(2rem, 4vw, 3rem);
+    background:
+        linear-gradient(135deg, rgba(251, 250, 246, 0.98), rgba(229, 245, 242, 0.9) 48%, rgba(255, 247, 223, 0.86)),
+        radial-gradient(circle at 88% 14%, rgba(15, 118, 110, 0.14), transparent 34%);
+    border-bottom: 1px solid rgba(19, 33, 82, 0.08);
+}
+
+.registration-hero-copy h1 {
+    max-width: 12ch;
+}
+
+.registration-focus-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1.1rem 0 1.25rem;
+}
+
+.registration-focus-strip span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    border: 1px solid rgba(15, 118, 110, 0.18);
+    border-radius: 8px;
+    padding: 0.42rem 0.62rem;
+    color: var(--primary);
+    background: rgba(255, 255, 255, 0.82);
+    font-size: 0.82rem;
+    font-weight: 900;
+    box-shadow: 0 8px 18px rgba(19, 33, 82, 0.06);
+}
+
+.registration-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.registration-visual {
+    display: grid;
+    justify-items: center;
+}
+
+.registration-visual .hero-image {
+    aspect-ratio: 4 / 3;
+    width: min(100%, 560px);
+}
+
+.registration-visual-card {
+    width: min(calc(100% - 2rem), 430px);
+    margin-top: -2.2rem;
+    position: relative;
+    z-index: 2;
+    border: 1px solid rgba(15, 118, 110, 0.18);
+    border-radius: 8px;
+    padding: 0.95rem 1rem;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 18px 42px rgba(19, 33, 82, 0.14);
+    backdrop-filter: blur(12px);
+}
+
+.registration-visual-card strong,
+.registration-visual-card span {
+    display: block;
+}
+
+.registration-visual-card strong {
+    color: var(--primary-strong);
+    font-size: 1rem;
+    line-height: 1.25;
+}
+
+.registration-visual-card span {
+    margin-top: 0.25rem;
+    color: var(--ink-soft);
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+.registration-page-section {
+    padding-top: clamp(2rem, 4vw, 3rem);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 247, 0.98));
+}
+
+.registration-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(1rem, 2.5vw, 1.5rem);
+    align-items: start;
+}
+
+.registration-guide {
+    border: 1px solid rgba(19, 33, 82, 0.1);
+    border-radius: 8px;
+    padding: clamp(1rem, 2.4vw, 1.25rem);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 251, 249, 0.92)),
+        radial-gradient(circle at 100% 0%, rgba(255, 210, 138, 0.2), transparent 36%);
+    box-shadow: var(--shadow-soft);
+}
+
+.registration-guide h2 {
+    margin-bottom: 0.9rem;
+    font-size: clamp(1.2rem, 3vw, 1.45rem);
+}
+
+.registration-guide-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.registration-guide-list article {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.7rem;
+    align-items: start;
+    border: 1px solid rgba(19, 33, 82, 0.08);
+    border-radius: 8px;
+    padding: 0.82rem;
+    background: rgba(255, 255, 255, 0.76);
+}
+
+.registration-guide-list span {
+    display: inline-grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    color: #ffffff;
+    background: linear-gradient(135deg, var(--primary), var(--teal));
+    font-size: 0.75rem;
+    font-weight: 900;
+}
+
+.registration-guide-list strong {
+    display: block;
+    color: var(--primary-strong);
+    line-height: 1.25;
+}
+
+.registration-guide-list p {
+    grid-column: 2;
+    margin: -0.35rem 0 0;
+    font-size: 0.86rem;
+    line-height: 1.48;
 }
 
 .cta-section {
@@ -1517,17 +1783,163 @@ a:hover {
 .registration-form {
     display: grid;
     gap: 1.25rem;
+    scroll-margin-top: 112px;
+}
+
+.registration-form-intro {
+    position: relative;
+    display: grid;
+    gap: 1rem;
+    overflow: hidden;
+    padding: clamp(1.15rem, 3vw, 1.65rem);
+    border: 1px solid rgba(15, 118, 110, 0.2);
+    border-radius: 18px;
+    background:
+        radial-gradient(circle at 92% 8%, rgba(255, 210, 138, 0.34), transparent 28%),
+        linear-gradient(135deg, #132152 0%, #0f766e 68%, #d96f20 140%);
+    box-shadow: 0 20px 42px rgba(19, 33, 82, 0.18);
+}
+
+.registration-form-intro::after {
+    content: "";
+    position: absolute;
+    right: -44px;
+    bottom: -66px;
+    width: 170px;
+    height: 170px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 50%;
+}
+
+.registration-form-intro h2,
+.registration-form-intro p {
+    position: relative;
+    z-index: 1;
+    color: #ffffff;
+}
+
+.registration-form-intro h2 {
+    max-width: 18ch;
+    margin-bottom: 0.42rem;
+    font-size: clamp(1.45rem, 4vw, 2rem);
+}
+
+.registration-form-intro p:last-child {
+    max-width: 54ch;
+    margin-bottom: 0;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.9rem;
+}
+
+.registration-form-intro .kicker {
+    margin-bottom: 0.45rem;
+    color: #ffd28a;
+}
+
+.registration-form-progress {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: auto minmax(28px, 1fr) auto;
+    align-items: center;
+    gap: 0.55rem;
+    max-width: 290px;
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 0.74rem;
+    font-weight: 900;
+}
+
+.registration-form-progress span {
+    display: inline-grid;
+    gap: 0.08rem;
+    line-height: 1;
+}
+
+.registration-form-progress span.is-active {
+    color: #ffffff;
+}
+
+.registration-form-progress small {
+    font-size: 0.66rem;
+    font-weight: 700;
+}
+
+.registration-form-progress i {
+    height: 2px;
+    background: linear-gradient(90deg, #ffd28a, rgba(255, 255, 255, 0.35));
+}
+
+.registration-form-tags {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.registration-form-tags span {
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+    padding: 0.32rem 0.62rem;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+    font-size: 0.7rem;
+    font-weight: 800;
 }
 
 .registration-section {
-    padding: 1.15rem;
-    border: 1px solid rgba(27, 36, 117, 0.1);
-    border-radius: 20px;
-    background: rgba(255, 255, 255, 0.76);
+    position: relative;
+    overflow: hidden;
+    padding: clamp(1rem, 3vw, 1.35rem);
+    border: 1px solid rgba(19, 33, 82, 0.1);
+    border-radius: 14px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 247, 0.96));
+    box-shadow: 0 18px 44px rgba(19, 33, 82, 0.09);
+}
+
+.registration-section::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 4px;
+    background: linear-gradient(90deg, var(--teal), var(--gold), var(--accent));
+}
+
+.registration-section-heading {
+    display: grid;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+}
+
+.registration-section-heading h2 {
+    margin-bottom: 0.45rem;
+    font-size: clamp(1.32rem, 4vw, 1.85rem);
+}
+
+.registration-section-heading p {
+    margin-bottom: 0;
+}
+
+.registration-section-heading > span {
+    width: fit-content;
+    border: 1px solid rgba(15, 118, 110, 0.18);
+    border-radius: 8px;
+    padding: 0.34rem 0.54rem;
+    color: var(--teal);
+    background: var(--teal-soft);
+    font-size: 0.76rem;
+    font-weight: 900;
+}
+
+.registration-field-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
 }
 
 .registration-fieldset {
-    margin: 1rem 0 0;
+    margin: 1.05rem 0 0;
     padding: 0;
     border: 0;
 }
@@ -1550,11 +1962,19 @@ a:hover {
     align-items: center;
     gap: 0.7rem;
     padding: 0.82rem 0.9rem;
-    border: 1px solid var(--line);
-    border-radius: 14px;
+    border: 1px solid rgba(19, 33, 82, 0.1);
+    border-radius: 8px;
     background: var(--surface);
     color: var(--ink);
     cursor: pointer;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.choice-card:hover,
+.choice-card:has(input:checked) {
+    border-color: rgba(15, 118, 110, 0.35);
+    background: linear-gradient(180deg, #ffffff, #f5fbf9);
+    box-shadow: 0 10px 24px rgba(19, 33, 82, 0.08);
 }
 
 .choice-card input {
@@ -1576,13 +1996,26 @@ a:hover {
 .payment-card {
     margin-top: 0.75rem;
     padding: 1rem 1.05rem;
-    border-radius: 18px;
-    background: linear-gradient(160deg, rgba(232, 237, 255, 0.84), rgba(255, 240, 228, 0.9));
-    border: 1px solid rgba(27, 36, 117, 0.1);
+    border-radius: 8px;
+    background:
+        linear-gradient(135deg, rgba(229, 245, 242, 0.9), rgba(255, 247, 223, 0.92));
+    border: 1px solid rgba(15, 118, 110, 0.14);
 }
 
 .payment-card p:last-child {
     margin-bottom: 0;
+}
+
+.registration-submit-row {
+    display: grid;
+    gap: 0.65rem;
+    margin-top: 1rem;
+}
+
+.registration-submit-row p {
+    margin-bottom: 0;
+    color: var(--muted);
+    font-size: 0.86rem;
 }
 
 .honeypot {
@@ -1757,10 +2190,15 @@ a:hover {
 .footer-bottom {
     margin-top: 1.8rem;
     padding: 1rem 0 1.45rem;
+    padding-right: clamp(1rem, 14vw, 11rem);
     border-top: 1px solid rgba(255, 255, 255, 0.22);
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+}
+
+main#content {
+    padding-bottom: clamp(1.5rem, 3.5vw, 3rem);
 }
 
 .flash-wrap {
@@ -1787,41 +2225,150 @@ a:hover {
     border: 1px solid #f4c2c2;
 }
 
-.whatsapp-button {
+/* AI Support & Floating Action Suite */
+.ai-support-wrapper {
     position: fixed;
-    right: 16px;
-    bottom: 16px;
+    right: 20px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
     z-index: 1250;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+    will-change: transform, opacity;
+    pointer-events: auto;
+}
+
+.ai-support-wrapper.is-scrolling {
+    opacity: 0.45;
+}
+
+.ai-support-wrapper:hover,
+.ai-support-wrapper:focus-within {
+    opacity: 1 !important;
+}
+
+.whatsapp-button,
+.ai-support-btn {
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: 0.55rem;
     border-radius: 999px;
-    padding: 0.72rem 1rem 0.72rem 0.88rem;
-    background: linear-gradient(135deg, #25D366, #128C7E);
+    padding: 0.65rem 1.05rem 0.65rem 0.85rem;
+    background: linear-gradient(135deg, #128C7E 0%, #25D366 100%);
     color: #ffffff;
-    font-weight: 800;
+    font-weight: 700;
     font-size: 0.86rem;
-    box-shadow: 0 14px 28px rgba(37, 211, 102, 0.38);
-    animation: pulse-glow 2.8s ease-in-out infinite;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    box-shadow: 0 10px 24px rgba(18, 140, 126, 0.35), 0 2px 6px rgba(0, 0, 0, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
-.whatsapp-button:hover {
-    background: linear-gradient(135deg, #1EBE5D, #0F7569);
+.whatsapp-button:hover,
+.ai-support-btn:hover {
+    background: linear-gradient(135deg, #0F7569 0%, #1EBE5D 100%);
     color: #ffffff;
     text-decoration: none;
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(18, 140, 126, 0.45), 0 4px 10px rgba(0, 0, 0, 0.16);
+}
+
+.whatsapp-button:active,
+.ai-support-btn:active {
+    transform: translateY(0);
+}
+
+.ai-support-pulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #7bf1a8;
+    box-shadow: 0 0 0 0 rgba(123, 241, 168, 0.7);
+    animation: ai-pulse-ring 2s infinite cubic-bezier(0.45, 0, 0.2, 1);
+    flex-shrink: 0;
+}
+
+@keyframes ai-pulse-ring {
+    0% {
+        box-shadow: 0 0 0 0 rgba(123, 241, 168, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(123, 241, 168, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(123, 241, 168, 0);
+    }
 }
 
 .whatsapp-icon {
-    width: 1.2rem;
-    height: 1.2rem;
+    width: 1.25rem;
+    height: 1.25rem;
     fill: currentColor;
     flex: 0 0 auto;
+}
+
+.ai-support-label {
+    white-space: nowrap;
+}
+
+.ai-support-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(19, 33, 82, 0.72);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    cursor: pointer;
+    padding: 0;
+    opacity: 0.75;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    transition: opacity 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+}
+
+.ai-support-toggle:hover {
+    opacity: 1;
+    background: rgba(19, 33, 82, 0.95);
+    transform: scale(1.1);
+}
+
+.ai-support-toggle-icon {
+    stroke-width: 2.5;
+}
+
+/* User-Minimized Non-Obtrusive State */
+.ai-support-wrapper.is-minimized .ai-support-btn {
+    padding: 0.55rem;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    justify-content: center;
+}
+
+.ai-support-wrapper.is-minimized .ai-support-label,
+.ai-support-wrapper.is-minimized .ai-support-pulse {
+    display: none !important;
+}
+
+.ai-support-wrapper.is-minimized .ai-support-toggle {
+    width: 20px;
+    height: 20px;
+    transform: rotate(45deg);
 }
 
 .back-to-top {
     position: fixed;
     left: 16px;
-    bottom: 16px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
     z-index: 1250;
     border-radius: 50%;
     width: 48px;
@@ -2581,6 +3128,105 @@ a:hover {
     align-self: start;
 }
 
+.auth-actions {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.8rem;
+    align-items: stretch;
+    margin: 1.35rem 0 0.65rem;
+}
+
+.registration-cta-link {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.78rem;
+    align-items: center;
+    min-height: 58px;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid rgba(15, 118, 110, 0.26);
+    border-radius: 8px;
+    padding: 0.72rem 0.88rem;
+    color: #ffffff;
+    background:
+        linear-gradient(135deg, rgba(19, 33, 82, 0.98) 0%, rgba(15, 118, 110, 0.94) 58%, rgba(217, 111, 32, 0.95) 100%);
+    box-shadow: 0 18px 42px rgba(19, 33, 82, 0.18);
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.registration-cta-link::before {
+    content: "";
+    position: absolute;
+    inset: 1px;
+    z-index: -1;
+    border-radius: 7px;
+    background:
+        linear-gradient(115deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 42%),
+        radial-gradient(circle at 82% 18%, rgba(255, 210, 138, 0.28), transparent 38%);
+}
+
+.registration-cta-link:hover {
+    color: #ffffff;
+    border-color: rgba(255, 210, 138, 0.55);
+    box-shadow: 0 24px 52px rgba(19, 33, 82, 0.24);
+    text-decoration: none;
+    transform: translateY(-2px);
+}
+
+.registration-cta-icon,
+.registration-cta-arrow {
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 auto;
+}
+
+.registration-cta-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
+    color: #101827;
+    background: linear-gradient(135deg, #ffd28a, #ffffff);
+    box-shadow: inset 0 0 0 1px rgba(19, 33, 82, 0.08);
+}
+
+.registration-cta-copy {
+    min-width: 0;
+    display: grid;
+    gap: 0.12rem;
+}
+
+.registration-cta-copy strong,
+.registration-cta-copy small {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+.registration-cta-copy strong {
+    color: #ffffff;
+    font-size: clamp(0.95rem, 1.7vw, 1.04rem);
+    line-height: 1.18;
+}
+
+.registration-cta-copy small {
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.registration-cta-arrow {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    color: #132152;
+    background: rgba(255, 255, 255, 0.86);
+    font-weight: 900;
+    line-height: 1;
+}
+
 .auth-switch {
     margin-top: 1rem;
     margin-bottom: 0;
@@ -2746,9 +3392,37 @@ a:hover {
 }
 
 @media (max-width: 639px) {
+    .quick-access {
+        align-items: stretch;
+    }
+
+    .quick-access .quick-register-link {
+        width: 100%;
+        min-width: 0;
+        text-align: left;
+    }
+
     .dashboard-section,
     .auth-section {
         padding-top: 2rem;
+    }
+
+    .auth-actions {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .auth-actions .btn,
+    .registration-cta-link {
+        width: 100%;
+    }
+
+    .registration-cta-link {
+        grid-template-columns: auto minmax(0, 1fr);
+        padding: 0.84rem;
+    }
+
+    .registration-cta-arrow {
+        display: none;
     }
 
     .auth-panel,
@@ -2880,6 +3554,10 @@ a:hover {
 }
 
 @media (min-width: 640px) {
+    .registration-field-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .choice-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -2955,6 +3633,24 @@ a:hover {
         gap: 1.5rem;
     }
 
+    .registration-layout {
+        grid-template-columns: minmax(240px, 0.34fr) minmax(0, 1fr);
+    }
+
+    .registration-guide {
+        position: sticky;
+        top: 112px;
+    }
+
+    .registration-field-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .registration-section-heading {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+    }
+
     .menu-toggle {
         display: none;
     }
@@ -3027,6 +3723,14 @@ a:hover {
         grid-column: 7 / span 6;
     }
 
+    .registration-hero .page-hero-grid > :first-child {
+        grid-column: 1 / span 7;
+    }
+
+    .registration-hero .page-hero-grid > :last-child {
+        grid-column: 8 / span 5;
+    }
+
     .program-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
@@ -3049,6 +3753,20 @@ a:hover {
 
     .story-grid > :last-child {
         grid-column: 7 / span 6;
+    }
+
+    .policy-layout {
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+
+    .policy-content {
+        grid-column: 1 / span 8;
+    }
+
+    .policy-contact {
+        grid-column: 9 / span 4;
+        position: sticky;
+        top: 6rem;
     }
 
     .contact-grid > :first-child {
@@ -5817,11 +6535,6 @@ label,
     border-radius: 8px;
 }
 
-.whatsapp-button {
-    border-radius: 8px;
-    background: linear-gradient(135deg, #128c7e, #25d366);
-}
-
 .back-to-top {
     border-radius: 8px;
 }
@@ -7559,30 +8272,50 @@ textarea:focus {
         display: none !important;
     }
 
-    /* Floating WhatsApp Button Mobile Optimization */
-    .whatsapp-button {
+    /* Floating AI Support & Navigation Mobile Optimization */
+    .ai-support-wrapper {
         right: 12px !important;
-        bottom: 12px !important;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 14px) !important;
+        gap: 0 !important;
+    }
+
+    .ai-support-wrapper .whatsapp-button,
+    .ai-support-wrapper .ai-support-btn {
+        right: auto !important;
+        bottom: auto !important;
         padding: 0 !important;
-        width: 46px !important;
-        height: 46px !important;
+        width: 44px !important;
+        height: 44px !important;
         border-radius: 50% !important;
         justify-content: center !important;
         box-shadow: 0 8px 20px rgba(37, 211, 102, 0.4) !important;
     }
 
-    .whatsapp-button span {
+    .ai-support-wrapper .ai-support-label,
+    .whatsapp-button span:not(.ai-support-pulse) {
+        display: none !important;
+    }
+
+    .ai-support-wrapper .ai-support-pulse {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 7px;
+        height: 7px;
+    }
+
+    .ai-support-toggle {
         display: none !important;
     }
 
     .whatsapp-icon {
-        width: 1.5rem !important;
-        height: 1.5rem !important;
+        width: 1.45rem !important;
+        height: 1.45rem !important;
     }
 
     .back-to-top {
         left: 12px !important;
-        bottom: 12px !important;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 14px) !important;
         width: 42px !important;
         height: 42px !important;
     }
@@ -7692,6 +8425,113 @@ h3 {
     .partner-hero .btn,
     .partner-cta-card .btn {
         width: auto !important;
+    }
+}
+
+/* Registration page responsive finish */
+.registration-layout .registration-form {
+    min-width: 0;
+}
+
+.registration-form input,
+.registration-form textarea,
+.registration-form select {
+    min-width: 0;
+}
+
+.registration-hero .registration-hero-copy h1 {
+    max-width: 12ch;
+    font-size: clamp(2.2rem, 6vw, 3.6rem);
+    line-height: 1.05;
+}
+
+.registration-hero .registration-hero-copy p {
+    max-width: 62ch;
+}
+
+.registration-hero .registration-visual {
+    min-width: 0;
+}
+
+@media (max-width: 768px) {
+    .registration-hero {
+        padding-top: 2.15rem !important;
+    }
+
+    .registration-hero-copy h1 {
+        max-width: 100% !important;
+        font-size: clamp(2rem, 11vw, 2.7rem) !important;
+    }
+
+    .registration-focus-strip {
+        gap: 0.42rem !important;
+    }
+
+    .registration-focus-strip span {
+        flex: 1 1 calc(50% - 0.42rem);
+        justify-content: center;
+        text-align: center;
+    }
+
+    .registration-hero-actions {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .registration-visual-card {
+        width: min(100%, 420px);
+        margin-top: -1.25rem;
+    }
+
+    .registration-page-section {
+        padding-top: 1.35rem !important;
+    }
+
+    .registration-layout {
+        gap: 1rem !important;
+    }
+
+    .registration-guide,
+    .registration-section {
+        padding: 1rem !important;
+    }
+
+    .registration-guide-list article {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .registration-field-grid,
+    .registration-form .choice-grid {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    .registration-form .rating-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        gap: 0.42rem !important;
+    }
+
+    .registration-form .rating-grid .choice-card {
+        justify-content: center;
+        padding-inline: 0.45rem !important;
+    }
+
+    .registration-section-heading > span {
+        width: 100%;
+        text-align: center;
+    }
+
+    .registration-submit-row .btn {
+        width: 100% !important;
+    }
+}
+
+@media (min-width: 1100px) {
+    .registration-layout {
+        grid-template-columns: minmax(270px, 0.3fr) minmax(0, 1fr);
+    }
+
+    .registration-form {
+        gap: 1.65rem;
     }
 }
 

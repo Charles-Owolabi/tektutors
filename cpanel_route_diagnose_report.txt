@@ -47,7 +47,7 @@ ROUTE email=grace@tektutors.com.ng path=/lms/classroom/data-analysis-sql status=
 ROUTE email=grace@tektutors.com.ng path=/lms/classroom/data-analysis-excel status=200 final=/dashboard/student
 ROUTE email=grace@tektutors.com.ng path=/lms/classroom/data-analysis-excel-imm status=200 final=/dashboard/student
 ROUTE email=grace@tektutors.com.ng path=/lms/classroom/data-analysis-excel-mic status=200 final=/dashboard/student
-USER id=5 email=ada.nwosu@tektutors.com.ng role=mentor approved=1 suspended=0 must_change=1
+USER id=5 email=ada.nwosu@tektutors.com.ng role=mentor approved=1 suspended=0 must_change=0
 ROUTE email=ada.nwosu@tektutors.com.ng path=/dashboard status=200 final=/dashboard/mentor
 ROUTE email=ada.nwosu@tektutors.com.ng path=/lms/classroom/data-analysis-bootcamp status=200 final=/lms/classroom/data-analysis-bootcamp
 ROUTE email=ada.nwosu@tektutors.com.ng path=/lms/classroom/applied-python-lab status=200 final=/dashboard/mentor
@@ -57,7 +57,7 @@ ROUTE email=ada.nwosu@tektutors.com.ng path=/lms/classroom/data-analysis-sql sta
 ROUTE email=ada.nwosu@tektutors.com.ng path=/lms/classroom/data-analysis-excel status=200 final=/dashboard/mentor
 ROUTE email=ada.nwosu@tektutors.com.ng path=/lms/classroom/data-analysis-excel-imm status=200 final=/dashboard/mentor
 ROUTE email=ada.nwosu@tektutors.com.ng path=/lms/classroom/data-analysis-excel-mic status=200 final=/dashboard/mentor
-USER id=6 email=michael.bassey@tektutors.com.ng role=mentor approved=1 suspended=0 must_change=1
+USER id=6 email=michael.bassey@tektutors.com.ng role=mentor approved=1 suspended=0 must_change=0
 ROUTE email=michael.bassey@tektutors.com.ng path=/dashboard status=200 final=/dashboard/mentor
 ROUTE email=michael.bassey@tektutors.com.ng path=/lms/classroom/data-analysis-bootcamp status=200 final=/dashboard/mentor
 ROUTE email=michael.bassey@tektutors.com.ng path=/lms/classroom/applied-python-lab status=200 final=/lms/classroom/applied-python-lab
@@ -67,7 +67,7 @@ ROUTE email=michael.bassey@tektutors.com.ng path=/lms/classroom/data-analysis-sq
 ROUTE email=michael.bassey@tektutors.com.ng path=/lms/classroom/data-analysis-excel status=200 final=/dashboard/mentor
 ROUTE email=michael.bassey@tektutors.com.ng path=/lms/classroom/data-analysis-excel-imm status=200 final=/dashboard/mentor
 ROUTE email=michael.bassey@tektutors.com.ng path=/lms/classroom/data-analysis-excel-mic status=200 final=/dashboard/mentor
-USER id=7 email=chidinma.ude@tektutors.com.ng role=mentor approved=1 suspended=0 must_change=1
+USER id=7 email=chidinma.ude@tektutors.com.ng role=mentor approved=1 suspended=0 must_change=0
 ROUTE email=chidinma.ude@tektutors.com.ng path=/dashboard status=200 final=/dashboard/mentor
 ROUTE email=chidinma.ude@tektutors.com.ng path=/lms/classroom/data-analysis-bootcamp status=200 final=/dashboard/mentor
 ROUTE email=chidinma.ude@tektutors.com.ng path=/lms/classroom/applied-python-lab status=200 final=/dashboard/mentor
@@ -87,7 +87,7 @@ ROUTE email=testlearner@example.com path=/lms/classroom/data-analysis-sql status
 ROUTE email=testlearner@example.com path=/lms/classroom/data-analysis-excel status=200 final=/auth/login
 ROUTE email=testlearner@example.com path=/lms/classroom/data-analysis-excel-imm status=200 final=/auth/login
 ROUTE email=testlearner@example.com path=/lms/classroom/data-analysis-excel-mic status=200 final=/auth/login
-USER id=9 email=ctowolabi@gmail.com role=mentor approved=1 suspended=0 must_change=1
+USER id=9 email=ctowolabi@gmail.com role=mentor approved=1 suspended=0 must_change=0
 ROUTE email=ctowolabi@gmail.com path=/dashboard status=200 final=/dashboard/mentor
 ROUTE email=ctowolabi@gmail.com path=/lms/classroom/data-analysis-bootcamp status=200 final=/dashboard/mentor
 ROUTE email=ctowolabi@gmail.com path=/lms/classroom/applied-python-lab status=200 final=/dashboard/mentor
@@ -117,12 +117,12 @@ ROUTE email=lolatunde18@gmail.com path=/lms/classroom/data-analysis-sql status=2
 ROUTE email=lolatunde18@gmail.com path=/lms/classroom/data-analysis-excel status=200 final=/dashboard/mentor
 ROUTE email=lolatunde18@gmail.com path=/lms/classroom/data-analysis-excel-imm status=200 final=/dashboard/mentor
 ROUTE email=lolatunde18@gmail.com path=/lms/classroom/data-analysis-excel-mic status=200 final=/dashboard/mentor
-USER id=13 email=ojebontop4real@gmail.com role=student approved=1 suspended=0 must_change=1
+USER id=13 email=ojebontop4real@gmail.com role=student approved=1 suspended=0 must_change=0
 ROUTE email=ojebontop4real@gmail.com path=/dashboard status=200 final=/dashboard/student
 ROUTE email=ojebontop4real@gmail.com path=/lms/classroom/data-analysis-bootcamp status=200 final=/dashboard/student
 ROUTE email=ojebontop4real@gmail.com path=/lms/classroom/applied-python-lab status=200 final=/dashboard/student
 ROUTE email=ojebontop4real@gmail.com path=/lms/classroom/ai-product-studio status=200 final=/dashboard/student
-ROUTE email=ojebontop4real@gmail.com path=/lms/classroom/business-intelligence status=200 final=/dashboard/student
+ROUTE email=ojebontop4real@gmail.com path=/lms/classroom/business-intelligence status=200 final=/lms/classroom/business-intelligence
 ROUTE email=ojebontop4real@gmail.com path=/lms/classroom/data-analysis-sql status=200 final=/dashboard/student
 ROUTE email=ojebontop4real@gmail.com path=/lms/classroom/data-analysis-excel status=200 final=/dashboard/student
 ROUTE email=ojebontop4real@gmail.com path=/lms/classroom/data-analysis-excel-imm status=200 final=/dashboard/student
@@ -137,7 +137,7 @@ ROUTE email=kehindefehintola@yahoo.co.uk path=/lms/classroom/data-analysis-sql s
 ROUTE email=kehindefehintola@yahoo.co.uk path=/lms/classroom/data-analysis-excel status=200 final=/dashboard/student
 ROUTE email=kehindefehintola@yahoo.co.uk path=/lms/classroom/data-analysis-excel-imm status=200 final=/dashboard/student
 ROUTE email=kehindefehintola@yahoo.co.uk path=/lms/classroom/data-analysis-excel-mic status=200 final=/dashboard/student
-USER id=15 email=omojadesolabalogun@gmail.com role=student approved=1 suspended=0 must_change=1
+USER id=15 email=omojadesolabalogun@gmail.com role=student approved=1 suspended=0 must_change=0
 ROUTE email=omojadesolabalogun@gmail.com path=/dashboard status=200 final=/dashboard/student
 ROUTE email=omojadesolabalogun@gmail.com path=/lms/classroom/data-analysis-bootcamp status=200 final=/dashboard/student
 ROUTE email=omojadesolabalogun@gmail.com path=/lms/classroom/applied-python-lab status=200 final=/dashboard/student

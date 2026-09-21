@@ -1,47 +1,114 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="page-hero">
+<section class="page-hero registration-hero">
     <div class="container page-hero-grid">
-        <div class="reveal">
-            <p class="kicker">Registration</p>
-            <h1>Data Analysis Training Registration Form</h1>
+        <div class="reveal registration-hero-copy">
+            <p class="kicker">AI, data and digital skills registration</p>
+            <h1>Register for AI, Data &amp; Digital Training</h1>
             <p>
-                Please fill the form with sincerity so as to enable us make informed decision with your training.
-                Feel free to reach out to us should you have any reservation about any information in the form.
+                Secure your place in practical, mentor-led training for AI tools, data analytics, and digital
+                workplace skills. Tell us about your goals so we can match you with the right learning path.
             </p>
+            <div class="registration-focus-strip" aria-label="Training focus areas">
+                <span>AI Tools</span>
+                <span>Data Analytics</span>
+                <span>Digital Skills</span>
+                <span>Live Mentorship</span>
+            </div>
+            <div class="registration-hero-actions">
+                <a class="btn btn-primary" href="#registration-form">Start registration</a>
+                <a class="btn btn-secondary" href="https://wa.me/2349112120531" target="_blank" rel="noopener noreferrer">Ask a question</a>
+            </div>
         </div>
-        <div class="hero-visual reveal">
+        <div class="hero-visual registration-visual reveal">
             <img
-                src="{{ url_for('static', filename='images/flexible-learning.png') }}"
-                alt="Online data analysis training with structured mentorship"
-                loading="lazy"
+                src="{{ url_for('static', filename='images/registration-ai-data-training.svg') }}"
+                alt="Online AI, data and digital skills training with structured mentorship"
+            loading="eager"
+            fetchpriority="high"
                 decoding="async"
-                width="1400"
-                height="1000"
+                width="720"
+                height="540"
                 class="hero-image"
             >
+            <div class="registration-visual-card">
+                <strong>6-week guided track</strong>
+                <span>Online classes, mentor support, assignments, and practical projects.</span>
+            </div>
         </div>
     </div>
 </section>
 
-<section class="section">
-    <div class="container">
-        <form class="contact-form registration-form reveal" action="{{ url_for('registration') }}" method="post" enctype="multipart/form-data">
+<section class="section registration-page-section">
+    <div class="container registration-layout">
+        <aside class="registration-guide reveal" aria-label="Registration guide">
+            <p class="kicker">Before you begin</p>
+            <h2>Complete this once. We will use it to place you correctly.</h2>
+            <div class="registration-guide-list">
+                <article>
+                    <span>01</span>
+                    <strong>Choose your track</strong>
+                    <p>Select the course that best matches your AI, data, or digital skills goal.</p>
+                </article>
+                <article>
+                    <span>02</span>
+                    <strong>Pick your schedule</strong>
+                    <p>Share preferred days and time slots so the team can plan your class.</p>
+                </article>
+                <article>
+                    <span>03</span>
+                    <strong>Upload receipt</strong>
+                    <p>Have your payment evidence ready before submitting the form.</p>
+                </article>
+            </div>
+        </aside>
+
+        <form id="registration-form" class="contact-form registration-form" action="{{ url_for('registration') }}" method="post" enctype="multipart/form-data">
             {{ csrf_field() }}
+            <header class="registration-form-intro">
+                <div>
+                    <p class="kicker">Your next chapter starts here</p>
+                    <h2>Build skills that move you forward.</h2>
+                    <p>Share a little about your goals and we will help shape the right AI, data, and digital learning path for you.</p>
+                </div>
+                <div class="registration-form-progress" aria-label="Two-step registration progress">
+                    <span class="is-active">01 <small>Profile</small></span>
+                    <i aria-hidden="true"></i>
+                    <span>02 <small>Payment</small></span>
+                </div>
+                <div class="registration-form-tags" aria-label="Training areas">
+                    <span>AI tools</span>
+                    <span>Data skills</span>
+                    <span>Digital growth</span>
+                </div>
+            </header>
             <div class="registration-section">
-                <p class="kicker">Section 1 of 2</p>
-                <h2>Data Analysis Training Registration Form</h2>
-                <p>Please fill the form with sincerity so as to enable us make informed decision with your training. Feel free to reach out to us should you have any reservation about any information in the form.</p>
+                <div class="registration-section-heading">
+                    <div>
+                        <p class="kicker">Section 1 of 2</p>
+                        <h2>AI, Data &amp; Digital Training Registration Form</h2>
+                        <p>Please fill the form carefully so we can understand your goals, current skill level, and preferred training schedule.</p>
+                    </div>
+                    <span>Required fields marked *</span>
+                </div>
 
-                <label for="name">Name (Full name) *</label>
-                <input id="name" name="name" type="text" placeholder="Your full name" required>
+                <div class="registration-field-grid">
+                    <div>
+                        <label for="name">Name (Full name) *</label>
+                        <input id="name" name="name" type="text" placeholder="Your full name" required>
+                    </div>
 
-                <label for="email">Email *</label>
-                <input id="email" name="email" type="email" placeholder="you@example.com" required>
+                    <div>
+                        <label for="email">Email *</label>
+                        <input id="email" name="email" type="email" placeholder="you@example.com" required>
+                    </div>
 
-                <label for="phone">Phone Number *</label>
-                <input id="phone" name="phone" type="tel" placeholder="+234..." required>
+                    <div>
+                        <label for="phone">Phone Number *</label>
+                        <input id="phone" name="phone" type="tel" placeholder="+234..." required>
+                    </div>
+                </div>
 
                 <fieldset class="registration-fieldset">
                     <legend>Highest Academic Qualifications *</legend>
@@ -73,13 +140,27 @@
                 <label for="past_training">Have you attended any data analysis training in the past? If yes, please provide details. If no, simply write Nil *</label>
                 <textarea id="past_training" name="past_training" rows="4" placeholder="Share previous training details or write Nil" required></textarea>
 
-                <label for="preferred_course">Your preferred course (Kindly select one) *</label>
-                <select id="preferred_course" name="preferred_course" required>
-                    <option value="">Select one course</option>
-                    {% for course in course_options %}
-                    <option value="{{ course }}">{{ course }}</option>
-                    {% endfor %}
-                </select>
+                <div class="registration-field-grid">
+                    <div>
+                        <label for="preferred_course">Your preferred course (Kindly select one) *</label>
+                        <select id="preferred_course" name="preferred_course" required>
+                            <option value="">Select one course</option>
+                            {% for course in course_options %}
+                            <option value="{{ course }}">{{ course }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="preferred_start_date">Your preferred start date *</label>
+                        <input id="preferred_start_date" name="preferred_start_date" type="date" required>
+                    </div>
+
+                    <div>
+                        <label for="preferred_time_slot">Your preferred time slot *</label>
+                        <input id="preferred_time_slot" name="preferred_time_slot" type="text" placeholder="e.g. 6pm-8pm" required>
+                    </div>
+                </div>
 
                 <fieldset class="registration-fieldset">
                     <legend>Please select any two as it best suit you. *</legend>
@@ -93,12 +174,6 @@
                         {% endfor %}
                     </div>
                 </fieldset>
-
-                <label for="preferred_start_date">Your preferred start date *</label>
-                <input id="preferred_start_date" name="preferred_start_date" type="date" required>
-
-                <label for="preferred_time_slot">Your preferred time slot (e.g., 6pm-8pm, 9pm-11pm) *</label>
-                <input id="preferred_time_slot" name="preferred_time_slot" type="text" placeholder="e.g. 6pm-8pm" required>
 
                 <fieldset class="registration-fieldset">
                     <legend>This training is scheduled to hold twice a week (4hrs per week) and for a duration of 6 weeks. *</legend>
@@ -189,9 +264,13 @@
             </div>
 
             <div class="registration-section payment-section">
-                <p class="kicker">Section 2 of 2</p>
-                <h2>Payment</h2>
-                <p>This section completes your registration.</p>
+                <div class="registration-section-heading">
+                    <div>
+                        <p class="kicker">Section 2 of 2</p>
+                        <h2>Payment</h2>
+                        <p>This section completes your registration.</p>
+                    </div>
+                </div>
                 <div class="payment-card">
                     <p>Please pay to this account details and upload your payment receipt/evidence:</p>
                     <p><strong>Bank:</strong> Moniepoint MFB</p>
@@ -207,7 +286,10 @@
                 <input type="text" name="company" tabindex="-1" autocomplete="off" class="honeypot" aria-hidden="true">
                 <input type="text" name="website" tabindex="-1" autocomplete="off" class="honeypot" aria-hidden="true">
 
-                <button type="submit" class="btn btn-primary">Submit Registration</button>
+                <div class="registration-submit-row">
+                    <button type="submit" class="btn btn-primary">Submit Registration</button>
+                    <p>Your details are reviewed by the Tektutors team before class placement.</p>
+                </div>
             </div>
         </form>
     </div>

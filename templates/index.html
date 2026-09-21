@@ -21,7 +21,26 @@
             </div>
             <nav class="quick-access reveal" aria-label="Quick access">
                 <a href="{{ url_for('programs') }}">View programs</a>
-                <a href="{{ url_for('registration') }}">Register</a>
+                <a class="quick-register-link" href="{{ url_for('registration') }}" aria-label="Register for AI, data and digital training">
+                    <span class="quick-register-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 3v18"></path>
+                            <path d="M3 12h18"></path>
+                            <path d="m5 5 2 2"></path>
+                            <path d="m17 17 2 2"></path>
+                            <path d="m19 5-2 2"></path>
+                            <path d="m7 17-2 2"></path>
+                        </svg>
+                    </span>
+                    <span class="quick-register-copy">
+                        <strong>Register for AI, Data &amp; Digital Training</strong>
+                        <small>Build practical skills for the digital economy</small>
+                    </span>
+                    <svg class="quick-register-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M5 12h14"></path>
+                        <path d="m13 6 6 6-6 6"></path>
+                    </svg>
+                </a>
                 <a href="{{ url_for('login') }}">Sign in</a>
             </nav>
         </div>

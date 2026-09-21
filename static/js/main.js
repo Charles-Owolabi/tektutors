@@ -18,6 +18,19 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    const registrationForm = document.getElementById("registration-form");
+    if (registrationForm && window.location.hash === "#registration-form") {
+        const alignRegistrationForm = () => {
+            registrationForm.scrollIntoView({ behavior: "auto", block: "start" });
+        };
+
+        requestAnimationFrame(alignRegistrationForm);
+        window.setTimeout(alignRegistrationForm, 80);
+        window.addEventListener("load", () => {
+            window.setTimeout(alignRegistrationForm, 0);
+        }, { once: true });
+    }
+
     const revealElements = document.querySelectorAll(".reveal");
     if (revealElements.length > 0) {
         const revealObserver = new IntersectionObserver(
@@ -54,17 +67,76 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const backToTopBtn = document.getElementById("backToTopBtn");
+    const aiSupportWrapper = document.getElementById("aiSupportWrapper");
+    const aiSupportToggle = document.getElementById("aiSupportToggle");
+    const siteFooter = document.querySelector(".site-footer");
+
+    // Dynamic collision avoider: lifts floating buttons smoothly so they never cover footer elements
+    const updateFloatingPositions = () => {
+        let liftAmount = 0;
+        if (siteFooter) {
+            const footerRect = siteFooter.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            const overlap = viewportHeight - footerRect.top;
+            if (overlap > 0) {
+                liftAmount = overlap + 14;
+            }
+        }
+
+        const transformValue = liftAmount > 0 ? `translateY(-${liftAmount}px)` : "";
+        if (aiSupportWrapper) {
+            aiSupportWrapper.style.transform = transformValue;
+        }
+        if (backToTopBtn && backToTopBtn.classList.contains("visible")) {
+            backToTopBtn.style.transform = transformValue;
+        }
+    };
+
     if (backToTopBtn) {
         const toggleBackToTop = () => {
             if (window.scrollY > 400) {
                 backToTopBtn.classList.add("visible");
             } else {
                 backToTopBtn.classList.remove("visible");
+                backToTopBtn.style.transform = "";
             }
         };
 
         window.addEventListener("scroll", toggleBackToTop, { passive: true });
         toggleBackToTop();
+    }
+
+    if (aiSupportWrapper) {
+        // Restore user minimization preference from session
+        const isMin = sessionStorage.getItem("tektutors_ai_support_minimized") === "true";
+        if (isMin) {
+            aiSupportWrapper.classList.add("is-minimized");
+        }
+
+        if (aiSupportToggle) {
+            aiSupportToggle.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const minimized = aiSupportWrapper.classList.toggle("is-minimized");
+                sessionStorage.setItem("tektutors_ai_support_minimized", String(minimized));
+                aiSupportToggle.setAttribute("aria-expanded", String(!minimized));
+                aiSupportToggle.setAttribute("title", minimized ? "Expand AI Support" : "Minimize AI Support");
+            });
+        }
+
+        // Active scroll dimmer: makes AI support translucent while scrolling so text beneath is visible
+        let scrollTimer = null;
+        window.addEventListener("scroll", () => {
+            updateFloatingPositions();
+            aiSupportWrapper.classList.add("is-scrolling");
+            clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(() => {
+                aiSupportWrapper.classList.remove("is-scrolling");
+            }, 350);
+        }, { passive: true });
+
+        window.addEventListener("resize", updateFloatingPositions, { passive: true });
+        updateFloatingPositions();
     }
 
     const activatePortalTab = (trigger, targetId, shouldScroll = true) => {

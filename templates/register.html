@@ -17,9 +17,28 @@
             <p>2. The admin reviews your registration and confirms eligibility.</p>
             <p>3. Approved candidates receive their Learning Hub login details from the admin.</p>
             <p>4. Use those details on the sign-in page to access your classroom.</p>
-            <div class="hero-cta">
+            <div class="auth-actions">
                 <a class="btn btn-primary" href="{{ url_for('login') }}">Sign in</a>
-                <a class="btn btn-secondary" href="{{ url_for('registration') }}">Start registration</a>
+                <a class="registration-cta-link" href="{{ url_for('registration') }}" aria-label="Register for AI, data and digital training">
+                    <span class="registration-cta-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2v4"></path>
+                            <path d="M12 18v4"></path>
+                            <path d="m4.93 4.93 2.83 2.83"></path>
+                            <path d="m16.24 16.24 2.83 2.83"></path>
+                            <path d="M2 12h4"></path>
+                            <path d="M18 12h4"></path>
+                            <path d="m4.93 19.07 2.83-2.83"></path>
+                            <path d="m16.24 7.76 2.83-2.83"></path>
+                            <circle cx="12" cy="12" r="3.2"></circle>
+                        </svg>
+                    </span>
+                    <span class="registration-cta-copy">
+                        <strong>Register for AI, Data &amp; Digital Training</strong>
+                        <small>Start your practical tech-skills journey today</small>
+                    </span>
+                    <span class="registration-cta-arrow" aria-hidden="true">-></span>
+                </a>
             </div>
             <p class="auth-switch">Already received your login details? <a href="{{ url_for('login') }}">Sign in here</a>.</p>
         </div>

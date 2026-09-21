@@ -1332,6 +1332,25 @@ def migrate_database_schema(db: Any) -> None:
     ensure_column(db, "users", "must_change_password", "INTEGER NOT NULL DEFAULT 0")
     ensure_column(db, "users", "reset_token", "TEXT")
     ensure_column(db, "users", "reset_token_expires_at", "TEXT")
+    ensure_column(db, "growth_associate_profiles", "phone_number", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(db, "growth_associate_profiles", "whatsapp_number", "TEXT")
+    ensure_column(db, "growth_associate_profiles", "location", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(db, "growth_associate_profiles", "country", "TEXT NOT NULL DEFAULT 'Nigeria'")
+    ensure_column(db, "growth_associate_profiles", "communication_channel", "TEXT NOT NULL DEFAULT 'Email'")
+    ensure_column(db, "growth_associate_profiles", "current_occupation", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(db, "growth_associate_profiles", "company_name", "TEXT")
+    ensure_column(db, "growth_associate_profiles", "linkedin_url", "TEXT")
+    ensure_column(db, "growth_associate_profiles", "network_areas", "TEXT")
+    ensure_column(db, "growth_associate_profiles", "access_industries", "TEXT")
+    ensure_column(db, "growth_associate_profiles", "monthly_prospect_reach", "TEXT")
+    ensure_column(db, "growth_associate_profiles", "agreed_to_terms", "INTEGER NOT NULL DEFAULT 1")
+    ensure_column(db, "growth_associate_profiles", "status", "TEXT NOT NULL DEFAULT 'pending'")
+    ensure_column(db, "growth_associate_profiles", "bank_name", "TEXT")
+    ensure_column(db, "growth_associate_profiles", "account_number", "TEXT")
+    ensure_column(db, "growth_associate_profiles", "account_name", "TEXT")
+    ensure_column(db, "growth_associate_profiles", "payout_notes", "TEXT")
+    ensure_column(db, "growth_associate_profiles", "created_at", "TEXT NOT NULL DEFAULT ''")
+    ensure_column(db, "growth_associate_profiles", "updated_at", "TEXT NOT NULL DEFAULT ''")
     ensure_column(db, "materials", "material_url", "TEXT")
     ensure_column(db, "submissions", "stored_name", "TEXT")
     ensure_column(db, "submissions", "original_name", "TEXT")
@@ -1645,6 +1664,34 @@ def send_login_details_email(*, recipient_name: str, recipient_email: str, passw
     except Exception as exc:
         app.logger.exception("Failed to send login details email to %s", recipient_email)
         raise RuntimeError("The account was created, but the login email could not be delivered. Check the mail settings and try sending it again.") from exc
+
+
+def send_growth_associate_approval_email(*, recipient_name: str, recipient_email: str, login_url: str) -> None:
+    ensure_mail_delivery_configured()
+
+    subject = "Your TekTutors Growth Associate Application Status"
+    body = (
+        f"Hello {recipient_name},\n\n"
+        f"Congratulations! Your application to become a TekTutors Growth Associate has been reviewed and approved.\n\n"
+        f"You can now log in to the Growth Associate Portal to access your dashboard, submit prospects, track your referrals, and manage your commissions.\n\n"
+        f"Portal Login URL: {login_url}\n"
+        f"Registered Email: {recipient_email}\n\n"
+        f"If you have any questions or need assistance, feel free to contact us.\n\n"
+        f"Best regards,\n"
+        f"TekTutors Team"
+    )
+    try:
+        with app.app_context():
+            message = Message(
+                subject=subject,
+                recipients=[recipient_email],
+                body=body,
+                sender=app.config["MAIL_DEFAULT_SENDER"],
+            )
+            mail.send(message)
+    except Exception as exc:
+        app.logger.exception("Failed to send growth associate approval email to %s", recipient_email)
+        raise RuntimeError("The application was approved, but the email notification could not be delivered. Check the mail settings and try again.") from exc
 
 
 def send_password_reset_email(*, recipient_name: str, recipient_email: str, reset_url: str) -> None:
@@ -3804,6 +3851,16 @@ def about():
         page_title="About Tektutors | Premium Data Mentorship",
         meta_description="Learn how Tektutors helps professionals become confident data experts through personalized mentorship.",
         active_page="about",
+    )
+
+
+@app.route("/privacy-policy")
+def privacy_policy():
+    return render_template(
+        "privacy_policy.html",
+        page_title="Privacy Policy | Tektutors",
+        meta_description="Read the Tektutors Privacy Policy, including how personal information is collected, used, stored, and protected.",
+        active_page="privacy",
     )
 
 
@@ -7768,6 +7825,16 @@ def admin_growth_associate_status(user_id: int):
         db.commit()
         create_audit_log(g.user["id"], "user", user_id, "Approve Associate", "pending", "approved")
         flash(f"Approved Growth Associate '{user['name']}'.", "success")
+        try:
+            send_growth_associate_approval_email(
+                recipient_name=user["name"],
+                recipient_email=user["email"],
+                login_url=url_for("growth_associate_login", _external=True),
+            )
+            flash("An approval email notification has been sent to the growth associate.", "success")
+        except Exception as exc:
+            app.logger.exception("Failed to send growth associate approval email: %s", exc)
+            flash("Growth Associate approved, but the notification email could not be delivered.", "warning")
 
     elif new_status == "reject":
         db.execute("UPDATE users SET is_approved = 0 WHERE id = ?", (user_id,))
@@ -8143,21 +8210,49 @@ def admin_export_reports():
 
 @app.errorhandler(Exception)
 def handle_exception(e):
+    from werkzeug.exceptions import HTTPException
+    if isinstance(e, HTTPException):
+        return e
+
     import traceback
     from pathlib import Path
     from datetime import datetime
     log_dir = Path(__file__).resolve().parent / "logs"
     log_dir.mkdir(exist_ok=True)
     log_file = log_dir / "flask_errors.log"
+    tb = traceback.format_exc()
     try:
         with open(log_file, "a", encoding="utf-8") as f:
             f.write(f"=== ERROR AT {datetime.now()} ===\n")
             f.write(f"Request Path: {request.path}\n")
             f.write(f"Request Method: {request.method}\n")
-            f.write(traceback.format_exc())
+            f.write(tb)
             f.write("\n\n")
     except Exception:
         pass
+
+    try:
+        if mail_delivery_configured():
+            subject = "Website Alert: Internal Server Error occurred"
+            body = (
+                f"An unexpected error occurred on the TekTutors website.\n\n"
+                f"Time: {datetime.now()}\n"
+                f"Request Path: {request.path}\n"
+                f"Request Method: {request.method}\n\n"
+                f"Error Details:\n{e}\n\n"
+                f"Traceback:\n{tb}"
+            )
+            with app.app_context():
+                message = Message(
+                    subject=subject,
+                    recipients=["tektutorsng@gmail.com"],
+                    body=body,
+                    sender=app.config["MAIL_DEFAULT_SENDER"],
+                )
+                mail.send(message)
+    except Exception as mail_exc:
+        app.logger.error(f"Failed to send exception email alert: {mail_exc}")
+
     return "Internal Server Error", 500
 
 
