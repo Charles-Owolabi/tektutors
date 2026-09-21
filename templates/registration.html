@@ -42,9 +42,24 @@
 
 <section class="section registration-page-section">
     <div class="container registration-layout">
-        <aside class="registration-guide reveal" aria-label="Registration guide">
-            <p class="kicker">Before you begin</p>
-            <h2>Complete this once. We will use it to place you correctly.</h2>
+        <aside class="registration-guide reveal" id="registrationGuide" aria-label="Registration guide">
+            <div class="registration-guide-header">
+                <div>
+                    <p class="kicker">Before you begin</p>
+                    <h2>Complete this once. We will use it to place you correctly.</h2>
+                </div>
+                <div class="reg-guide-controls" aria-label="Guide controls">
+                    <button type="button" class="reg-guide-control-btn" id="regGuideMinBtn" title="Minimize guide" aria-label="Minimize guide">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    </button>
+                    <button type="button" class="reg-guide-control-btn" id="regGuideMaxBtn" title="Maximize / Expand guide" aria-label="Maximize guide">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+                    </button>
+                    <button type="button" class="reg-guide-control-btn" id="regGuideCloseBtn" title="Close guide" aria-label="Close guide">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+            </div>
             <div class="registration-guide-list">
                 <article>
                     <span>01</span>
@@ -67,10 +82,16 @@
         <form id="registration-form" class="contact-form registration-form" action="{{ url_for('registration') }}" method="post" enctype="multipart/form-data">
             {{ csrf_field() }}
             <header class="registration-form-intro">
-                <div>
-                    <p class="kicker">Your next chapter starts here</p>
-                    <h2>Build skills that move you forward.</h2>
-                    <p>Share a little about your goals and we will help shape the right AI, data, and digital learning path for you.</p>
+                <div class="registration-intro-main">
+                    <div>
+                        <p class="kicker">Your next chapter starts here</p>
+                        <h2>Build skills that move you forward.</h2>
+                        <p>Share a little about your goals and we will help shape the right AI, data, and digital learning path for you.</p>
+                    </div>
+                    <button type="button" class="reg-guide-restore-btn" id="regGuideRestoreBtn" style="display: none;" title="Show Registration Guide">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <span>Show Guide</span>
+                    </button>
                 </div>
                 <div class="registration-form-progress" aria-label="Two-step registration progress">
                     <span class="is-active">01 <small>Profile</small></span>

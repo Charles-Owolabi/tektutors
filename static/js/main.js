@@ -68,7 +68,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const backToTopBtn = document.getElementById("backToTopBtn");
     const aiSupportWrapper = document.getElementById("aiSupportWrapper");
-    const aiSupportToggle = document.getElementById("aiSupportToggle");
+    const aiSupportBtn = document.getElementById("aiSupportBtn");
+    const aiSupportMinBtn = document.getElementById("aiSupportMinBtn");
+    const aiSupportMaxBtn = document.getElementById("aiSupportMaxBtn");
+    const aiSupportCloseBtn = document.getElementById("aiSupportCloseBtn");
+    const aiWinMinBtn = document.getElementById("aiWinMinBtn");
+    const aiWinRestoreBtn = document.getElementById("aiWinRestoreBtn");
+    const aiWinCloseBtn = document.getElementById("aiWinCloseBtn");
+    const aiSupportReopen = document.getElementById("aiSupportReopen");
     const siteFooter = document.querySelector(".site-footer");
 
     // Dynamic collision avoider: lifts floating buttons smoothly so they never cover footer elements
@@ -84,8 +91,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const transformValue = liftAmount > 0 ? `translateY(-${liftAmount}px)` : "";
-        if (aiSupportWrapper) {
+        if (aiSupportWrapper && !aiSupportWrapper.classList.contains("is-closed")) {
             aiSupportWrapper.style.transform = transformValue;
+        }
+        if (aiSupportReopen && aiSupportReopen.classList.contains("is-visible")) {
+            aiSupportReopen.style.transform = transformValue;
         }
         if (backToTopBtn && backToTopBtn.classList.contains("visible")) {
             backToTopBtn.style.transform = transformValue;
@@ -107,36 +117,184 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (aiSupportWrapper) {
-        // Restore user minimization preference from session
-        const isMin = sessionStorage.getItem("tektutors_ai_support_minimized") === "true";
-        if (isMin) {
-            aiSupportWrapper.classList.add("is-minimized");
+        const setAiSupportState = (state, save = true) => {
+            aiSupportWrapper.classList.remove("is-minimized", "is-maximized", "is-closed");
+            if (aiSupportReopen) {
+                aiSupportReopen.classList.remove("is-visible");
+            }
+
+            if (state === "minimized") {
+                aiSupportWrapper.classList.add("is-minimized");
+            } else if (state === "maximized") {
+                aiSupportWrapper.classList.add("is-maximized");
+            } else if (state === "closed") {
+                aiSupportWrapper.classList.add("is-closed");
+                if (aiSupportReopen) {
+                    aiSupportReopen.classList.add("is-visible");
+                }
+            }
+
+            if (save) {
+                sessionStorage.setItem("tektutors_ai_support_state", state);
+                sessionStorage.setItem("tektutors_ai_support_minimized", String(state === "minimized"));
+            }
+
+            updateFloatingPositions();
+        };
+
+        // Initialize state from session storage
+        const savedState = sessionStorage.getItem("tektutors_ai_support_state");
+        const legacyMin = sessionStorage.getItem("tektutors_ai_support_minimized") === "true";
+        if (savedState) {
+            setAiSupportState(savedState, false);
+        } else if (legacyMin) {
+            setAiSupportState("minimized", false);
         }
 
-        if (aiSupportToggle) {
-            aiSupportToggle.addEventListener("click", (e) => {
+        // Pill controls
+        if (aiSupportMinBtn) {
+            aiSupportMinBtn.addEventListener("click", (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                const minimized = aiSupportWrapper.classList.toggle("is-minimized");
-                sessionStorage.setItem("tektutors_ai_support_minimized", String(minimized));
-                aiSupportToggle.setAttribute("aria-expanded", String(!minimized));
-                aiSupportToggle.setAttribute("title", minimized ? "Expand AI Support" : "Minimize AI Support");
+                setAiSupportState("minimized");
             });
         }
+
+        if (aiSupportMaxBtn) {
+            aiSupportMaxBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setAiSupportState("maximized");
+            });
+        }
+
+        if (aiSupportCloseBtn) {
+            aiSupportCloseBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setAiSupportState("closed");
+            });
+        }
+
+        // Expanded window controls
+        if (aiWinMinBtn) {
+            aiWinMinBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setAiSupportState("minimized");
+            });
+        }
+
+        if (aiWinRestoreBtn) {
+            aiWinRestoreBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setAiSupportState("normal");
+            });
+        }
+
+        if (aiWinCloseBtn) {
+            aiWinCloseBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setAiSupportState("closed");
+            });
+        }
+
+        // Reopen trigger button
+        if (aiSupportReopen) {
+            aiSupportReopen.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setAiSupportState("normal");
+            });
+        }
+
+        // Clicking the WhatsApp button while in minimized state restores normal pill view first
+        if (aiSupportBtn) {
+            aiSupportBtn.addEventListener("click", (e) => {
+                if (aiSupportWrapper.classList.contains("is-minimized")) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setAiSupportState("normal");
+                }
+            });
+        }
+
+        // Pressing Escape closes maximized window
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && aiSupportWrapper.classList.contains("is-maximized")) {
+                setAiSupportState("normal");
+            }
+        });
 
         // Active scroll dimmer: makes AI support translucent while scrolling so text beneath is visible
         let scrollTimer = null;
         window.addEventListener("scroll", () => {
             updateFloatingPositions();
-            aiSupportWrapper.classList.add("is-scrolling");
-            clearTimeout(scrollTimer);
-            scrollTimer = setTimeout(() => {
-                aiSupportWrapper.classList.remove("is-scrolling");
-            }, 350);
+            if (!aiSupportWrapper.classList.contains("is-maximized")) {
+                aiSupportWrapper.classList.add("is-scrolling");
+                clearTimeout(scrollTimer);
+                scrollTimer = setTimeout(() => {
+                    aiSupportWrapper.classList.remove("is-scrolling");
+                }, 350);
+            }
         }, { passive: true });
 
         window.addEventListener("resize", updateFloatingPositions, { passive: true });
         updateFloatingPositions();
+    }
+
+    // Registration Guide controls (Minimize, Maximize, Close, Restore)
+    const registrationGuide = document.getElementById("registrationGuide");
+    const registrationLayout = document.querySelector(".registration-layout");
+    const regGuideMinBtn = document.getElementById("regGuideMinBtn");
+    const regGuideMaxBtn = document.getElementById("regGuideMaxBtn");
+    const regGuideCloseBtn = document.getElementById("regGuideCloseBtn");
+    const regGuideRestoreBtn = document.getElementById("regGuideRestoreBtn");
+
+    if (registrationGuide) {
+        if (regGuideMinBtn) {
+            regGuideMinBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                registrationGuide.classList.remove("is-maximized");
+                const isMin = registrationGuide.classList.toggle("is-minimized");
+                regGuideMinBtn.setAttribute("title", isMin ? "Expand guide" : "Minimize guide");
+            });
+        }
+
+        if (regGuideMaxBtn) {
+            regGuideMaxBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                registrationGuide.classList.remove("is-minimized");
+                const isMax = registrationGuide.classList.toggle("is-maximized");
+                regGuideMaxBtn.setAttribute("title", isMax ? "Restore standard guide view" : "Maximize / Expand guide");
+            });
+        }
+
+        if (regGuideCloseBtn) {
+            regGuideCloseBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                registrationGuide.classList.add("is-closed");
+                if (registrationLayout) {
+                    registrationLayout.classList.add("has-closed-guide");
+                }
+                if (regGuideRestoreBtn) {
+                    regGuideRestoreBtn.style.display = "inline-flex";
+                }
+            });
+        }
+
+        if (regGuideRestoreBtn) {
+            regGuideRestoreBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                registrationGuide.classList.remove("is-closed", "is-minimized", "is-maximized");
+                if (registrationLayout) {
+                    registrationLayout.classList.remove("has-closed-guide");
+                }
+                regGuideRestoreBtn.style.display = "none";
+            });
+        }
     }
 
     const activatePortalTab = (trigger, targetId, shouldScroll = true) => {

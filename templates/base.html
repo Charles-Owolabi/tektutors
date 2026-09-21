@@ -17,10 +17,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Sora:wght@500;600;700;800&display=swap" as="style">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-    <noscript><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet"></noscript>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css', v='20260921-ai-support-position') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css', v='20260921-ai-controls') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/site_logo.png') }}">
-    <script defer src="{{ url_for('static', filename='js/main.js', v='20260921-ai-support-position') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/main.js', v='20260921-ai-controls') }}"></script>
 
     {% if ga_tracking_id %}
     <!-- Google tag (gtag.js) -->
@@ -153,35 +152,170 @@
         </div>
     </footer>
 
-    <aside class="ai-support-wrapper" id="aiSupportWrapper" aria-label="AI Support">
-        <a
-            class="whatsapp-button ai-support-btn"
-            id="aiSupportBtn"
-            href="https://wa.me/2349112120531?text=Hello%20Tektutors%2C%20I%20want%20to%20start%20my%20data%20learning%20journey."
-            target="_blank"
-            rel="noopener"
-            aria-label="Chat with AI Support on WhatsApp"
-            title="Chat with AI Support on WhatsApp"
-        >
-            <span class="ai-support-pulse" aria-hidden="true"></span>
-            <svg class="whatsapp-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true">
-                <path d="M19.11 17.19c-.27-.13-1.58-.78-1.82-.87-.24-.09-.41-.13-.58.14-.17.27-.67.87-.82 1.05-.15.18-.31.2-.58.07-.27-.13-1.13-.42-2.16-1.34-.8-.72-1.35-1.62-1.51-1.89-.16-.27-.02-.42.12-.55.12-.12.27-.31.41-.47.14-.16.18-.27.27-.45.09-.18.05-.34-.02-.47-.07-.13-.58-1.39-.8-1.9-.21-.5-.43-.43-.58-.44h-.5c-.18 0-.47.07-.72.34-.25.27-.95.93-.95 2.27s.97 2.63 1.11 2.81c.14.18 1.91 2.92 4.64 4.1.65.28 1.16.45 1.56.57.65.21 1.24.18 1.71.11.52-.08 1.58-.65 1.8-1.28.22-.63.22-1.17.15-1.28-.07-.11-.24-.18-.51-.31z"/>
-                <path d="M16.02 3.2c-7.06 0-12.8 5.72-12.8 12.75 0 2.24.59 4.42 1.7 6.34L3.1 28.8l6.71-1.76a12.85 12.85 0 0 0 6.2 1.59h.01c7.06 0 12.8-5.72 12.8-12.75S23.08 3.2 16.02 3.2zm0 23.22h-.01a10.7 10.7 0 0 1-5.46-1.49l-.39-.23-3.98 1.05 1.06-3.87-.25-.4a10.52 10.52 0 0 1-1.63-5.6c0-5.85 4.8-10.61 10.69-10.61 2.85 0 5.53 1.1 7.54 3.1a10.5 10.5 0 0 1 3.14 7.5c0 5.85-4.8 10.61-10.7 10.61z"/>
-            </svg>
-            <span class="ai-support-label">AI Support</span>
-        </a>
-        <button
-            type="button"
-            class="ai-support-toggle"
-            id="aiSupportToggle"
-            aria-label="Minimize AI Support"
-            title="Minimize AI Support"
-        >
-            <svg class="ai-support-toggle-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-        </button>
+    <aside class="ai-support-wrapper" id="aiSupportWrapper" aria-label="AI Support &amp; Guide">
+        <!-- Floating capsule / trigger bar -->
+        <div class="ai-support-bar" id="aiSupportBar">
+            <a
+                class="whatsapp-button ai-support-btn"
+                id="aiSupportBtn"
+                href="https://wa.me/2349112120531?text=Hello%20Tektutors%2C%20I%20want%20to%20start%20my%20data%20learning%20journey."
+                target="_blank"
+                rel="noopener"
+                aria-label="Chat with AI Support on WhatsApp"
+                title="Chat with AI Support on WhatsApp"
+            >
+                <span class="ai-support-pulse" aria-hidden="true"></span>
+                <svg class="whatsapp-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true">
+                    <path d="M19.11 17.19c-.27-.13-1.58-.78-1.82-.87-.24-.09-.41-.13-.58.14-.17.27-.67.87-.82 1.05-.15.18-.31.2-.58.07-.27-.13-1.13-.42-2.16-1.34-.8-.72-1.35-1.62-1.51-1.89-.16-.27-.02-.42.12-.55.12-.12.27-.31.41-.47.14-.16.18-.27.27-.45.09-.18.05-.34-.02-.47-.07-.13-.58-1.39-.8-1.9-.21-.5-.43-.43-.58-.44h-.5c-.18 0-.47.07-.72.34-.25.27-.95.93-.95 2.27s.97 2.63 1.11 2.81c.14.18 1.91 2.92 4.64 4.1.65.28 1.16.45 1.56.57.65.21 1.24.18 1.71.11.52-.08 1.58-.65 1.8-1.28.22-.63.22-1.17.15-1.28-.07-.11-.24-.18-.51-.31z"/>
+                    <path d="M16.02 3.2c-7.06 0-12.8 5.72-12.8 12.75 0 2.24.59 4.42 1.7 6.34L3.1 28.8l6.71-1.76a12.85 12.85 0 0 0 6.2 1.59h.01c7.06 0 12.8-5.72 12.8-12.75S23.08 3.2 16.02 3.2zm0 23.22h-.01a10.7 10.7 0 0 1-5.46-1.49l-.39-.23-3.98 1.05 1.06-3.87-.25-.4a10.52 10.52 0 0 1-1.63-5.6c0-5.85 4.8-10.61 10.69-10.61 2.85 0 5.53 1.1 7.54 3.1a10.5 10.5 0 0 1 3.14 7.5c0 5.85-4.8 10.61-10.7 10.61z"/>
+                </svg>
+                <span class="ai-support-label">AI Support &amp; Guide</span>
+            </a>
+            <div class="ai-support-controls" aria-label="AI Support controls">
+                <button
+                    type="button"
+                    class="ai-control-btn ai-control-min"
+                    id="aiSupportMinBtn"
+                    aria-label="Minimize AI Support"
+                    title="Minimize"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
+                <button
+                    type="button"
+                    class="ai-control-btn ai-control-max"
+                    id="aiSupportMaxBtn"
+                    aria-label="Maximize AI Support &amp; Guide"
+                    title="Maximize / Open Guide"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <polyline points="9 21 3 21 3 15"></polyline>
+                        <line x1="21" y1="3" x2="14" y2="10"></line>
+                        <line x1="3" y1="21" x2="10" y2="14"></line>
+                    </svg>
+                </button>
+                <button
+                    type="button"
+                    class="ai-control-btn ai-control-close"
+                    id="aiSupportCloseBtn"
+                    aria-label="Close AI Support"
+                    title="Close"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Maximized AI Support & Guide Interactive Panel -->
+        <div class="ai-support-window" id="aiSupportWindow" role="region" aria-label="AI Support and Learning Guide">
+            <header class="ai-window-header">
+                <div class="ai-window-title-wrap">
+                    <span class="ai-window-avatar" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2 2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
+                            <rect x="4" y="8" width="16" height="12" rx="3"/>
+                            <circle cx="9" cy="13" r="1.25" fill="currentColor"/>
+                            <circle cx="15" cy="13" r="1.25" fill="currentColor"/>
+                            <path d="M10 17h4"/>
+                        </svg>
+                    </span>
+                    <div>
+                        <h3 class="ai-window-title">AI Support &amp; Guide</h3>
+                        <span class="ai-window-status"><span class="status-dot"></span> Mentor &amp; AI Assist • Online</span>
+                    </div>
+                </div>
+                <div class="ai-window-actions">
+                    <button type="button" class="ai-win-btn" id="aiWinMinBtn" title="Minimize" aria-label="Minimize">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    </button>
+                    <button type="button" class="ai-win-btn" id="aiWinRestoreBtn" title="Restore floating pill" aria-label="Restore pill view">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="2"/><line x1="5" y1="10" x2="19" y2="10"/></svg>
+                    </button>
+                    <button type="button" class="ai-win-btn" id="aiWinCloseBtn" title="Close" aria-label="Close">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+            </header>
+
+            <div class="ai-window-body">
+                <div class="ai-window-intro">
+                    <p>Welcome to <strong>TekTutors AI Support &amp; Learning Guide</strong>. How can we help your career and learning journey today?</p>
+                </div>
+
+                <div class="ai-quick-actions">
+                    <a class="ai-action-card ai-whatsapp-card" href="https://wa.me/2349112120531?text=Hello%20Tektutors%2C%20I%20want%20to%20start%20my%20data%20learning%20journey." target="_blank" rel="noopener">
+                        <div class="ai-action-icon whatsapp-bg">
+                            <svg class="whatsapp-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true">
+                                <path d="M19.11 17.19c-.27-.13-1.58-.78-1.82-.87-.24-.09-.41-.13-.58.14-.17.27-.67.87-.82 1.05-.15.18-.31.2-.58.07-.27-.13-1.13-.42-2.16-1.34-.8-.72-1.35-1.62-1.51-1.89-.16-.27-.02-.42.12-.55.12-.12.27-.31.41-.47.14-.16.18-.27.27-.45.09-.18.05-.34-.02-.47-.07-.13-.58-1.39-.8-1.9-.21-.5-.43-.43-.58-.44h-.5c-.18 0-.47.07-.72.34-.25.27-.95.93-.95 2.27s.97 2.63 1.11 2.81c.14.18 1.91 2.92 4.64 4.1.65.28 1.16.45 1.56.57.65.21 1.24.18 1.71.11.52-.08 1.58-.65 1.8-1.28.22-.63.22-1.17.15-1.28-.07-.11-.24-.18-.51-.31z"/>
+                                <path d="M16.02 3.2c-7.06 0-12.8 5.72-12.8 12.75 0 2.24.59 4.42 1.7 6.34L3.1 28.8l6.71-1.76a12.85 12.85 0 0 0 6.2 1.59h.01c7.06 0 12.8-5.72 12.8-12.75S23.08 3.2 16.02 3.2zm0 23.22h-.01a10.7 10.7 0 0 1-5.46-1.49l-.39-.23-3.98 1.05 1.06-3.87-.25-.4a10.52 10.52 0 0 1-1.63-5.6c0-5.85 4.8-10.61 10.69-10.61 2.85 0 5.53 1.1 7.54 3.1a10.5 10.5 0 0 1 3.14 7.5c0 5.85-4.8 10.61-10.7 10.61z"/>
+                            </svg>
+                        </div>
+                        <div class="ai-action-text">
+                            <strong>Chat with AI Support on WhatsApp</strong>
+                            <span>Instant advice, class timing &amp; mentor direct line</span>
+                        </div>
+                        <span class="ai-action-arrow" aria-hidden="true">&rarr;</span>
+                    </a>
+                </div>
+
+                <div class="ai-guide-accordion">
+                    <p class="ai-guide-label">Quick Learning &amp; Program Guide</p>
+                    
+                    <details class="ai-guide-item" open>
+                        <summary>🎯 Which track matches my goal?</summary>
+                        <div class="ai-guide-content">
+                            <p><strong>Beginner / Transition:</strong> Data Analytics with Excel, SQL, and Power BI.</p>
+                            <p><strong>Code &amp; Systems:</strong> Python for Data Science &amp; AI Workflows.</p>
+                            <p><strong>Enterprise:</strong> Predictive Modeling, Machine Learning &amp; BI Strategy.</p>
+                            <a class="ai-guide-link" href="{{ url_for('programs') }}">Explore all courses &rarr;</a>
+                        </div>
+                    </details>
+
+                    <details class="ai-guide-item">
+                        <summary>🌙 How do flexible &amp; night classes work?</summary>
+                        <div class="ai-guide-content">
+                            <p>Every program is 1-on-1 with experienced mentors. You choose weeknight or weekend schedules so your learning never clashes with employment or business commitments.</p>
+                        </div>
+                    </details>
+
+                    <details class="ai-guide-item">
+                        <summary>📝 How do I apply and register?</summary>
+                        <div class="ai-guide-content">
+                            <p>Complete our fast 2-step registration. Choose your track, upload payment confirmation, and your assigned mentor will onboard you within 24 hours.</p>
+                            <a class="ai-guide-link" href="{{ url_for('registration') }}">Start registration &rarr;</a>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="ai-window-footer">
+                    <span>Direct Call: <a href="tel:+2348063584517">+234 806 358 4517</a></span>
+                    <a class="ai-consult-link" href="{{ url_for('contact') }}#contact-form">Book Consultation &rarr;</a>
+                </div>
+            </div>
+        </div>
     </aside>
+
+    <!-- Discreet Reopen Trigger when closed -->
+    <button
+        type="button"
+        class="ai-support-reopen"
+        id="aiSupportReopen"
+        aria-label="Open AI Support &amp; Guide"
+        title="Open AI Support &amp; Guide"
+    >
+        <span class="ai-reopen-pulse" aria-hidden="true"></span>
+        <svg class="whatsapp-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M19.11 17.19c-.27-.13-1.58-.78-1.82-.87-.24-.09-.41-.13-.58.14-.17.27-.67.87-.82 1.05-.15.18-.31.2-.58.07-.27-.13-1.13-.42-2.16-1.34-.8-.72-1.35-1.62-1.51-1.89-.16-.27-.02-.42.12-.55.12-.12.27-.31.41-.47.14-.16.18-.27.27-.45.09-.18.05-.34-.02-.47-.07-.13-.58-1.39-.8-1.9-.21-.5-.43-.43-.58-.44h-.5c-.18 0-.47.07-.72.34-.25.27-.95.93-.95 2.27s.97 2.63 1.11 2.81c.14.18 1.91 2.92 4.64 4.1.65.28 1.16.45 1.56.57.65.21 1.24.18 1.71.11.52-.08 1.58-.65 1.8-1.28.22-.63.22-1.17.15-1.28-.07-.11-.24-.18-.51-.31z"/>
+            <path d="M16.02 3.2c-7.06 0-12.8 5.72-12.8 12.75 0 2.24.59 4.42 1.7 6.34L3.1 28.8l6.71-1.76a12.85 12.85 0 0 0 6.2 1.59h.01c7.06 0 12.8-5.72 12.8-12.75S23.08 3.2 16.02 3.2zm0 23.22h-.01a10.7 10.7 0 0 1-5.46-1.49l-.39-.23-3.98 1.05 1.06-3.87-.25-.4a10.52 10.52 0 0 1-1.63-5.6c0-5.85 4.8-10.61 10.69-10.61 2.85 0 5.53 1.1 7.54 3.1a10.5 10.5 0 0 1 3.14 7.5c0 5.85-4.8 10.61-10.7 10.61z"/>
+        </svg>
+        <span class="ai-reopen-label">AI Support &amp; Guide</span>
+    </button>
 
     <a href="#top" id="backToTopBtn" class="back-to-top" aria-label="Back to top">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 4l-8 8h6v8h4v-8h6z"/></svg>
